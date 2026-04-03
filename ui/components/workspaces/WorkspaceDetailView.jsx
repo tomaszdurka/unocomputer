@@ -26,7 +26,7 @@ export default function WorkspaceDetailView({ workspace }) {
   const [fileError, setFileError] = useState(null);
   const [showRunDialog, setShowRunDialog] = useState(false);
   const runs = workspace.runs ?? [];
-  const availableFiles = ['AGENTS.md', 'SPECIFICATION.md', 'CHANGELOG.md'];
+  const availableFiles = ['AGENTS.md'];
 
   // Extract unique sessions from runs with status
   const sessions = useMemo(() => {

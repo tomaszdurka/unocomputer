@@ -7,6 +7,8 @@ import { PersistenceService } from '../database/persistence.service';
 import { ClaudeService } from '../claude/claude.service';
 import { v4 as uuidv4 } from 'uuid';
 import {RunsService} from "./runs.service";
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 @ApiTags('runs')
 @Controller('runs')
@@ -105,7 +107,33 @@ export class RunsController {
     summary: 'Execute run',
     description: 'Execute a Claude CLI run. Supports streaming (application/x-ndjson) and buffered modes. Provide sessionId to continue session, workspaceId to create new session in workspace, or neither to create new workspace.'
   })
-  @ApiResponse({ status: 200, description: 'Run completed or streaming' })
+  @ApiResponse({
+    status: 200,
+    description: 'Run completed or streaming',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            timestamp: { type: 'string', format: 'date-time' },
+            workspaceId: { type: 'string' },
+            sessionId: { type: 'string' },
+            runId: { type: 'string' },
+            result: { type: 'object' },
+            structuredResult: { type: 'object' }
+          }
+        }
+      },
+      'application/x-ndjson': {
+        // OpenAPI 3.2 itemSchema not yet supported by @nestjs/swagger 11.2.6
+        // Using schema as workaround - manually add itemSchema to generated spec if needed
+        schema: {
+          type: 'string',
+          description: 'Newline-delimited JSON stream of events'
+        }
+      } as any
+    }
+  })
   async executeRun(
     @Body() dto: RunDto,
     @Headers('accept') accept: string,

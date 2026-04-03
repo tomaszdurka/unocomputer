@@ -1,7 +1,6 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {PersistenceService} from "../database/persistence.service";
 import {RunStatus} from "../database/entities";
-import {enhancePrompt} from "../lib/enhancePrompt";
 import {RunOptions} from "./dto/run-options";
 import {ClaudeService} from "../claude/claude.service";
 import {GeminiService} from "../gemini/gemini.service";
@@ -38,7 +37,7 @@ export class RunsService {
     const {run, session, workspace} = options
     const {runId} = run
 
-    let prompt = enhancePrompt(run);
+    let prompt = run.prompt
     let model = run.model;
 
     if (session.runs.length > 0) {

@@ -220,23 +220,19 @@ Workspaces can be created new or reused:
 - Provide `workspaceId` in the request body
 - The workspace directory must exist (returns 400 if not)
 - Allows continuity across multiple runs
-- State is tracked across `AGENTS.md`, `SPECIFICATION.md`, and `CHANGELOG.md`
+- Optional `AGENTS.md` can be created via workspace creation API
 
 ### Directory Structure
 ```
 local-model-api/
 ├── workspaces/
 │   ├── abc-123-def-456/       # Workspace for run 1
-│   │   ├── CLAUDE.md          # Reference file (DO NOT MODIFY)
-│   │   ├── AGENTS.md          # Agent state and context
-│   │   ├── SPECIFICATION.md   # Workspace specification
-│   │   ├── CHANGELOG.md       # Run history
-│   │   └── ...                # Other files created during execution
+│   │   ├── CLAUDE.md          # Reference file pointing to AGENTS.md
+│   │   ├── AGENTS.md          # Optional project guidelines
+│   │   └── ...                # Files created during execution
 │   └── xyz-789-uvw-012/       # Workspace for run 2
 │       ├── CLAUDE.md
 │       ├── AGENTS.md
-│       ├── SPECIFICATION.md
-│       ├── CHANGELOG.md
 │       └── ...
 ```
 
@@ -246,27 +242,14 @@ local-model-api/
 
 Each workspace contains several tracking files:
 
-**CLAUDE.md** (Reference only):
-- Generated file that points to other tracking files
-- Should not be modified directly
-- References `AGENTS.md`, `SPECIFICATION.md`, and `CHANGELOG.md`
+**CLAUDE.md**:
+- Auto-generated file that points to AGENTS.md
+- Created on first run in workspace
 
 **AGENTS.md**:
-- Current state of the project
-- Important context for future runs
-- Technical details and tooling information
-- People, teams, companies involved
-
-**SPECIFICATION.md**:
-- Mid-high level feature documentation
-- Updated with current state of workspace
-
-**CHANGELOG.md**:
-- Chronological run history
-- Each entry includes date, time, and run ID
-- Tracks executed tasks, implemented/modified/removed features
-
-The prompt automatically includes instructions for Claude to update these files after each run, ensuring continuity when reusing workspaces.
+- Optional project guidelines and context
+- Created via `POST /workspaces` with `agentsMd` parameter
+- Controlled by API caller, not auto-generated
 
 ## Architecture
 
@@ -277,15 +260,17 @@ src/
 ├── main.ts                    # Bootstrap NestJS application
 ├── app.module.ts              # Root module (imports RunsModule, ConfigModule)
 ├── types.ts                   # Shared types (StreamEvent)
-├── lib/
-│   └── enhancePrompt.ts       # Prompt enhancement utility
 ├── claude/
 │   ├── claude.module.ts       # Claude module (exports ClaudeService)
 │   └── claude.service.ts      # Claude CLI execution logic
+├── workspaces/
+│   ├── workspaces.controller.ts # Workspace CRUD operations
+│   └── dto/
+│       └── create-workspace.dto.ts # Workspace creation with optional agentsMd
 └── runs/
     ├── runs.module.ts         # Runs module (exports RunsService)
     ├── runs.controller.ts     # HTTP endpoint handler
-    ├── runs.service.ts        # Workspace & JSON stream utilities
+    ├── runs.service.ts        # Run execution and provider routing
     └── dto/
         └── run.dto.ts         # Request validation DTO
 ```
@@ -328,49 +313,29 @@ src/
 **Methods:**
 
 **`run(options): Promise<unknown>`**
-- Creates initial `CLAUDE.md` reference file in workspace
-- Enhances the prompt with workspace file maintenance instructions (via `enhancePrompt` utility)
-- Builds Claude CLI arguments including `--continue` flag
+- Creates initial `CLAUDE.md` reference file in workspace if needed
+- Builds Claude CLI arguments with `--session-id` (first run) or `--resume` (subsequent runs)
 - Sets permission mode (`bypassPermissions`)
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment
-- Uses `RunsService.executeJsonStream()` to run the command
+- Executes command and streams JSONL output
 - Finds and returns the `type: "result"` or `type: "result_success"` event
 - Options:
-  - `prompt`: The prompt to execute (will be enhanced with file maintenance instructions)
-  - `runId`: Unique identifier for this run (used in CHANGELOG.md entries)
+  - `prompt`: The prompt to execute (no automatic enhancement)
+  - `runId`: Unique identifier for this run
   - `workingDir`: Workspace directory path
   - `outputSchema`: Optional JSON schema for structured output
   - `onOutput`: Callback for streaming events (optional)
 
-**Prompt Enhancement:**
-
-The prompt enhancement is handled by the `enhancePrompt` utility in `src/lib/enhancePrompt.ts`. It automatically appends instructions to every prompt:
-
-```
-IMPORTANT: Never read/create/modify files outside of this directory. Current directory is your workspace and build everything here.
-
-IMPORTANT: After completing the task, update the AGENTS.md file in the workspace with:
-- Current state of the project
-- Any important context for future runs
-- Include technical details and tooling if applicable
-- Include information about any people, teams, companies involved if applicable
-
-IMPORTANT: Also maintain the workspace specification in the single SPECIFICATION.md file
-- Try to include every feature on mid-high level
-- Update this file with current state
-
-IMPORTANT: On every run also create new entry at the beginning of CHANGELOG.md
-- Each entry should have title with date+time and run-id '{runId}'
-- Below in bullets write down any change e.g. executed tasks, implemented/modified/removed features, etc.
-
-This helps maintain continuity across multiple runs in the same workspace.
-```
-
 **Command Construction:**
 
-Example command:
+Example first run:
 ```bash
-claude --continue -p "What is 2+2?" --output-format stream-json --verbose --permission-mode bypassPermissions
+claude --session-id abc-123 -p "What is 2+2?" --output-format stream-json --verbose --permission-mode bypassPermissions
+```
+
+Example subsequent run:
+```bash
+claude --resume abc-123 -p "Continue the conversation" --output-format stream-json --verbose --permission-mode bypassPermissions
 ```
 
 With schema:
@@ -413,8 +378,9 @@ UnoComputer includes a Next.js 16 dashboard built with Turbopack for fast develo
 
 - **Workspaces View** - Manage isolated environments
   - List all workspaces with metadata
+  - Create workspaces with optional AGENTS.md
   - Edit workspace names
-  - View sessions and workspace files (AGENTS.md, SPECIFICATION.md, CHANGELOG.md)
+  - View workspace files (AGENTS.md)
   - Create new runs in workspace
 
 ### Navigation

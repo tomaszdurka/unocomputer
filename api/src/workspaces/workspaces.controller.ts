@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Patch, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Patch, Body, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
 import { Workspace } from '../database/entities';
-import { UpdateWorkspaceDto } from './dto';
+import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
+import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -12,6 +13,31 @@ export class WorkspacesController {
   constructor(
     private readonly db: PersistenceService,
   ) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create workspace', description: 'Create a new workspace with optional AGENTS.md' })
+  @ApiBody({ type: CreateWorkspaceDto })
+  @ApiResponse({ status: 201, description: 'Workspace created successfully', type: Workspace })
+  async createWorkspace(@Body() createDto: CreateWorkspaceDto): Promise<Workspace> {
+    const workspaceId = uuidv4();
+    const workingDir = process.env.WORKSPACES_DIR
+      ? `${process.env.WORKSPACES_DIR}/${workspaceId}`
+      : `${process.cwd()}/workspaces/${workspaceId}`;
+
+    const workspace = await this.db.createWorkspace({
+      workspaceId,
+      workingDir,
+      name: createDto.name,
+    });
+
+    // Write AGENTS.md if provided
+    if (createDto.agentsMd) {
+      const agentsMdPath = path.join(workingDir, 'AGENTS.md');
+      fs.writeFileSync(agentsMdPath, createDto.agentsMd, 'utf-8');
+    }
+
+    return workspace;
+  }
 
   @Get()
   @ApiOperation({ summary: 'List all workspaces', description: 'Get a list of all Claude workspaces' })
@@ -60,13 +86,13 @@ export class WorkspacesController {
   @Get(':workspaceId/files/:filename')
   @ApiOperation({
     summary: 'Read workspace file',
-    description: 'Read specific markdown files from the workspace directory (CHANGELOG.md, SPECIFICATION.md, AGENTS.md)'
+    description: 'Read specific markdown files from the workspace directory (AGENTS.md)'
   })
   @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiParam({
     name: 'filename',
     description: 'File name',
-    enum: ['CHANGELOG.md', 'SPECIFICATION.md', 'AGENTS.md'],
+    enum: ['AGENTS.md'],
     example: 'AGENTS.md'
   })
   @ApiResponse({ status: 200, description: 'File content', schema: { type: 'object', properties: { content: { type: 'string' } } } })
@@ -77,7 +103,7 @@ export class WorkspacesController {
     @Param('filename') filename: string
   ): Promise<{ content: string; filename: string }> {
     // Whitelist of allowed files
-    const allowedFiles = ['CHANGELOG.md', 'SPECIFICATION.md', 'AGENTS.md'];
+    const allowedFiles = ['AGENTS.md'];
 
     if (!allowedFiles.includes(filename)) {
       throw new BadRequestException(`File ${filename} is not allowed. Allowed files: ${allowedFiles.join(', ')}`);

@@ -16,16 +16,6 @@ export class GeminiService {
     const {run, session, workspace} = options;
     const {runId, prompt, outputSchema} = run;
 
-    // Create initial AGENTS.md file
-    const agentsMdPath = path.join(workspace.workingDir, 'AGENTS.md');
-    const initialContent = `DO NOT MODIFY THIS FILE, ITS GENERATED
-Please refer to:
-- SPECIFICATION.md for expected specification
-- CHANGELOG.md for changelog`;
-    if (!fs.existsSync(agentsMdPath)) {
-        fs.writeFileSync(agentsMdPath, initialContent);
-    }
-
     // Ensure run directory exist
     const runPath = path.join(this.getSessionDirectory(session), runId);
     fs.mkdirSync(runPath, {recursive: true});

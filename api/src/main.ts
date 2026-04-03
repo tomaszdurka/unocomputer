@@ -35,8 +35,9 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('runs', 'Claude run execution and querying')
     .addTag('workspaces', 'Workspace management and querying')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config.build(), {
+    operationIdFactory: (controllerKey: string, methodKey: string, version?: string) => methodKey,
+  });
   SwaggerModule.setup('api', app, document);
 
   // Ensure data directory exists and update schema
