@@ -19,17 +19,19 @@
 src/
 ├── main.ts                    # NestJS bootstrap, port 3100
 ├── app.module.ts              # Root module (imports RunsModule, ConfigModule)
-├── lib/
-│   └── enhancePrompt.ts       # Prompt enhancement with workspace file tracking
 ├── claude/
 │   ├── claude.module.ts       # Provides ClaudeService
 │   └── claude.service.ts      # Claude CLI execution logic
+├── workspaces/
+│   ├── workspaces.controller.ts # Workspace CRUD operations
+│   └── dto/
+│       └── create-workspace.dto.ts # Workspace creation with optional agentsMd
 └── runs/
     ├── runs.module.ts         # Provides RunsService, RunsController
-    ├── runs.controller.ts     # POST /runs/claude endpoint handler
-    ├── runs.service.ts        # Workspace management + JSON stream utilities
+    ├── runs.controller.ts     # POST /runs endpoint handler
+    ├── runs.service.ts        # Run execution and provider routing
     └── dto/
-        └── run.dto.ts         # Request validation (prompt, schema?, workspaceId?)
+        └── run.dto.ts         # Request validation (prompt, schema?, workspaceId?, sessionId?)
 ```
 
 ### Service Responsibilities
@@ -40,17 +42,21 @@ src/
 - Uses `WORKSPACES_DIR` env var (default: `./workspaces`)
 
 **ClaudeService**
-- `run(options)`: Execute Claude CLI with enhanced prompt
-- Creates initial `CLAUDE.md` in workspace (reference file)
-- Enhances prompt via `enhancePrompt()` utility
-- Runs: `claude --continue -p <prompt> --output-format stream-json --verbose --permission-mode bypassPermissions`
+- `run(options)`: Execute Claude CLI
+- Creates initial `CLAUDE.md` in workspace (reference file pointing to AGENTS.md)
+- First run uses: `claude --session-id <id> -p <prompt> --output-format stream-json --verbose --permission-mode bypassPermissions`
+- Subsequent runs use: `claude --resume <session-id> -p <prompt> ...`
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment to avoid nesting
 
-**enhancePrompt()**
-- Appends instructions to maintain workspace state files:
-  - `AGENTS.md`: Project state, context, technical details
-  - `SPECIFICATION.md`: Mid-high level feature documentation
-  - `CHANGELOG.md`: Run history with date/time and run-id
+**WorkspacesController**
+- `POST /workspaces`: Create workspace with optional `agentsMd` content
+- `GET /workspaces`: List all workspaces
+- `GET /workspaces/:id`: Get workspace details
+- `PATCH /workspaces/:id`: Update workspace properties
+
+**Workspace Files**
+- `AGENTS.md`: Optional project guidelines (created via POST /workspaces with `agentsMd` param)
+- `CLAUDE.md`: Auto-generated reference file pointing to AGENTS.md
 
 ### Request Flow
 
@@ -83,10 +89,8 @@ src/
 - Update SPEC.md if API changes
 
 **Workspace State Files**
-- `CLAUDE.md`: Generated reference (points to AGENTS.md, SPEC.md, CHANGELOG.md)
-- `AGENTS.md`: Agent-facing project state
-- `SPECIFICATION.md`: User-facing feature docs
-- `CHANGELOG.md`: Chronological run history
+- `CLAUDE.md`: Generated reference (points to AGENTS.md)
+- `AGENTS.md`: Optional project guidelines (created via API)
 
 **Error Handling**
 - Use NestJS exceptions (`BadRequestException`, etc.)
@@ -101,9 +105,9 @@ src/
 
 ### Key Files to Know
 
-- `src/runs/runs.service.ts`: Line buffering logic for JSONL parsing
+- `src/runs/runs.service.ts`: Run execution and provider routing
 - `src/claude/claude.service.ts`: Claude CLI command construction
-- `src/lib/enhancePrompt.ts`: Prompt enhancement template
+- `src/workspaces/workspaces.controller.ts`: Workspace creation with agentsMd
 - `SPEC.md`: Complete API specification
 - `vercel.json`: Deployment config (routes to `server.js`)
 
@@ -145,9 +149,9 @@ curl -X POST http://localhost:3100/runs/claude \
 3. Implement logic in `RunsService` or new service
 4. Update SPEC.md
 
-### Modify Prompt Enhancement
-- Edit `src/lib/enhancePrompt.ts`
-- Change workspace file tracking instructions
+### Set Workspace Instructions
+- Pass `agentsMd` when creating workspace via `POST /workspaces`
+- AGENTS.md content is controlled by the caller, not hardcoded
 
 ### Change Permission Mode
 - Edit `src/claude/claude.service.ts` line 37

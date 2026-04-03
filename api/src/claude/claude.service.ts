@@ -19,17 +19,15 @@ export class ClaudeService {
     const sessionRuns = session.runs?.getItems() || [];
     const isFirstRun = sessionRuns.filter((r: Run) => r.runId !== runId).length === 0;
 
-    // Create initial CLAUDE.md file
+    // Create initial CLAUDE.md file if needed
     const claudeMdPath = path.join(workspace.workingDir, 'CLAUDE.md');
-    const initialContent = `DO NOT MODIFY THIS FILE, ITS GENERATED
-Please refer to:
-- AGENTS.md for guidelines
-- SPECIFICATION.md for expected specification 
-- CHANGELOG.md for changelog`;
-    fs.writeFileSync(claudeMdPath, initialContent, {
-      encoding: 'utf-8',
-      flag: 'w'
-    });
+    if (!fs.existsSync(claudeMdPath)) {
+      const initialContent = `Please refer to AGENTS.md for project guidelines`;
+      fs.writeFileSync(claudeMdPath, initialContent, {
+        encoding: 'utf-8',
+        flag: 'w'
+      });
+    }
 
     const permissionMode = 'bypassPermissions';
     const args = [];
