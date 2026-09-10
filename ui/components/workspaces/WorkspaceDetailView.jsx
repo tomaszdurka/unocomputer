@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog';
 import { updateWorkspace, getWorkspaceFile, queueRun } from '@/lib/api';
-import { Edit2, Check, X, FileText, Play } from 'lucide-react';
+import { Edit2, Check, X, FileText, Play, Copy } from 'lucide-react';
 import RunPromptDialog from '@/components/runs/RunPromptDialog';
 
 export default function WorkspaceDetailView({ workspace }) {
@@ -25,6 +25,7 @@ export default function WorkspaceDetailView({ workspace }) {
   const [loadingFile, setLoadingFile] = useState(false);
   const [fileError, setFileError] = useState(null);
   const [showRunDialog, setShowRunDialog] = useState(false);
+  const [copiedPath, setCopiedPath] = useState(false);
   const runs = workspace.runs ?? [];
   const availableFiles = ['AGENTS.md'];
 
@@ -117,6 +118,16 @@ export default function WorkspaceDetailView({ workspace }) {
       workspaceId: workspace.workspaceId, // Always create new session
       model,
     });
+  };
+
+  const handleCopyPath = async () => {
+    try {
+      await navigator.clipboard.writeText(workspace.workingDir);
+      setCopiedPath(true);
+      setTimeout(() => setCopiedPath(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy path:', err);
+    }
   };
 
   return (
@@ -256,7 +267,24 @@ export default function WorkspaceDetailView({ workspace }) {
           </p>
           <p>
             <span className="grid-label">Working Dir:</span>{' '}
-            <span className="ml-2 text-muted-foreground">{workspace.workingDir || '-'}</span>
+            {workspace.workingDir ? (
+              <span className="relative inline-block ml-2">
+                <button
+                  onClick={handleCopyPath}
+                  className="text-muted-foreground hover:text-slate-600 inline-flex items-center gap-1.5 group/path transition"
+                >
+                  <span>{workspace.workingDir}</span>
+                  <Copy className="h-3 w-3 text-slate-400 opacity-0 group-hover/path:opacity-100 transition" />
+                </button>
+                {copiedPath && (
+                  <span className="absolute right-0 top-full mt-1 bg-slate-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
+                    Copied!
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="ml-2 text-muted-foreground">-</span>
+            )}
           </p>
           <p>
             <span className="grid-label">Created:</span>{' '}
