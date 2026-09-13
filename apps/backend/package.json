@@ -1,5 +1,5 @@
 {
-  "name": "uno-computer-api",
+  "name": "backend",
   "version": "1.0.0",
   "description": "UnoComputer API - Local Model API with workspace isolation",
   "main": "dist/main.js",
