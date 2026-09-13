@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import type { Prompt } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { Prompt } from '../database/entities';
+import { PromptDto } from '../database/dto';
 import { CreatePromptDto, UpdatePromptDto } from './dto/prompt.dto';
 import { PersistenceService } from '../database/persistence.service';
 
@@ -11,7 +12,7 @@ export class PromptsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new prompt' })
-  @ApiResponse({ status: 201, description: 'Prompt created', type: Prompt })
+  @ApiResponse({ status: 201, description: 'Prompt created', type: PromptDto })
   async createPrompt(@Body() dto: CreatePromptDto): Promise<Prompt> {
     return await this.persistence.createPrompt({
       name: dto.name,
@@ -22,7 +23,7 @@ export class PromptsController {
 
   @Get()
   @ApiOperation({ summary: 'List all prompts' })
-  @ApiResponse({ status: 200, description: 'List of prompts', type: [Prompt] })
+  @ApiResponse({ status: 200, description: 'List of prompts', type: [PromptDto] })
   async listPrompts(): Promise<Prompt[]> {
     return await this.persistence.findAllPrompts();
   }
@@ -30,7 +31,7 @@ export class PromptsController {
   @Get(':promptId')
   @ApiOperation({ summary: 'Get prompt by ID' })
   @ApiParam({ name: 'promptId' })
-  @ApiResponse({ status: 200, description: 'Prompt details', type: Prompt })
+  @ApiResponse({ status: 200, description: 'Prompt details', type: PromptDto })
   @ApiResponse({ status: 404, description: 'Prompt not found' })
   async getPrompt(@Param('promptId') promptId: string): Promise<Prompt> {
     const prompt = await this.persistence.getPrompt({ promptId });
@@ -43,7 +44,7 @@ export class PromptsController {
   @Patch(':promptId')
   @ApiOperation({ summary: 'Update a prompt' })
   @ApiParam({ name: 'promptId' })
-  @ApiResponse({ status: 200, description: 'Prompt updated', type: Prompt })
+  @ApiResponse({ status: 200, description: 'Prompt updated', type: PromptDto })
   @ApiResponse({ status: 404, description: 'Prompt not found' })
   async updatePrompt(
     @Param('promptId') promptId: string,

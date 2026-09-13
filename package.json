@@ -24,13 +24,11 @@
   "author": "",
   "license": "ISC",
   "pnpm": {
-    "overrides": {
-      "better-sqlite3": "^12.11.1"
-    },
     "onlyBuiltDependencies": [
       "@nestjs/core",
-      "better-sqlite3",
+      "@prisma/client",
       "esbuild",
+      "prisma",
       "sharp"
     ]
   }

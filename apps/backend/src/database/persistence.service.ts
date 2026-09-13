@@ -1,14 +1,54 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EntityManager } from '@mikro-orm/core';
-import { RunStatus, Workspace, Session, Run, RunEvent, Prompt } from './entities';
+import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import * as fs from "node:fs";
+import * as fs from 'node:fs';
+import { PrismaService } from '../prisma/prisma.service';
+import { RunStatus } from './run-status';
+
+// SQLite has no JSON type, so run.outputSchema, run.result and runEvent.payload are
+// TEXT columns holding JSON. The API has always exposed them as objects - the admin
+// feeds run.result straight into JSON.stringify - so they are (de)serialised here and
+// nowhere else. Everything leaving this service is already hydrated.
+
+function serialise(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  return JSON.stringify(value);
+}
+
+function parse(value: string | null): any {
+  if (value === null || value === undefined) return undefined;
+  try {
+    return JSON.parse(value);
+  } catch {
+    // A row written outside this service, or truncated. Surface the raw text rather
+    // than throwing and taking down the whole response.
+    return value;
+  }
+}
+
+function hydrateEvent<T extends { payload: string }>(event: T) {
+  return { ...event, payload: parse(event.payload) };
+}
+
+function hydrateRun(run: any): any {
+  if (!run) return run;
+  return {
+    ...run,
+    outputSchema: parse(run.outputSchema ?? null),
+    result: parse(run.result ?? null),
+    ...(run.events ? { events: run.events.map(hydrateEvent) } : {}),
+  };
+}
+
+function hydrateRuns(rows: any[] | undefined | null): any[] {
+  return rows ? rows.map(hydrateRun) : [];
+}
 
 @Injectable()
 export class PersistenceService {
   private readonly logger = new Logger(PersistenceService.name);
 
-  constructor(private readonly em: EntityManager) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Store an event for a run
@@ -19,15 +59,15 @@ export class PersistenceService {
     sequence: number;
   }): Promise<void> {
     try {
-      const event = this.em.create(RunEvent, {
-        id: `${payload.runId}-${payload.sequence}`,
-        run: { runId: payload.runId } as any,
-        type: payload.event.type || 'unknown',
-        payload: payload.event,
-        sequence: payload.sequence,
+      await this.prisma.runEvent.create({
+        data: {
+          id: `${payload.runId}-${payload.sequence}`,
+          runId: payload.runId,
+          type: payload.event?.type || 'unknown',
+          payload: serialise(payload.event) ?? 'null',
+          sequence: payload.sequence,
+        },
       });
-      this.em.persist(event);
-      await this.em.flush();
     } catch (error) {
       this.logger.error(`Failed to store event for run ${payload.runId}:`, error);
     }
@@ -43,12 +83,15 @@ export class PersistenceService {
     exitCode?: number;
   }): Promise<void> {
     try {
-      const run = await this.em.findOneOrFail(Run, { runId: payload.runId });
-      run.status = payload.status;
-      run.result = payload.result;
-      run.exitCode = payload.exitCode;
-      run.completedAt = new Date();
-      await this.em.flush();
+      await this.prisma.run.update({
+        where: { runId: payload.runId },
+        data: {
+          status: payload.status,
+          result: serialise(payload.result),
+          exitCode: payload.exitCode ?? null,
+          completedAt: new Date(),
+        },
+      });
     } catch (error) {
       this.logger.error(`Failed to set status for run ${payload.runId}:`, error);
     }
@@ -57,55 +100,55 @@ export class PersistenceService {
   /**
    * Create a session
    */
-  async createSession(payload: {
-    workspaceId: string;
-  }): Promise<Session> {
-    const sessionId = uuidv4();
-    const session = this.em.create(Session, {
-      sessionId,
-      workspace: { workspaceId: payload.workspaceId } as any,
+  async createSession(payload: { workspaceId: string }) {
+    return this.prisma.session.create({
+      data: { sessionId: uuidv4(), workspaceId: payload.workspaceId },
     });
-    this.em.persist(session);
-    await this.em.flush();
-    return session;
   }
 
   /**
    * Get a session
    */
-  async getSession(payload: { sessionId: string }): Promise<Session | null> {
-    return this.em.findOne(Session, { sessionId: payload.sessionId }, { populate: ['workspace', 'runs'] });
+  async getSession(payload: { sessionId: string }) {
+    return this.findSessionWithRuns(payload);
   }
 
   /**
    * Get all sessions
    */
-  async findAllSessions(): Promise<Session[]> {
-    return this.em.find(Session, {}, {
-      orderBy: { createdAt: 'DESC' },
-      populate: ['workspace', 'runs']
+  async findAllSessions() {
+    const sessions = await this.prisma.session.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { workspace: true, runs: true },
     });
+    return sessions.map((session) => ({ ...session, runs: hydrateRuns(session.runs) }));
   }
 
   /**
    * Get session with runs
    */
-  async findSessionWithRuns(payload: { sessionId: string }): Promise<Session | null> {
-    return this.em.findOne(Session, { sessionId: payload.sessionId }, { populate: ['workspace', 'runs'] });
+  async findSessionWithRuns(payload: { sessionId: string }) {
+    const session = await this.prisma.session.findUnique({
+      where: { sessionId: payload.sessionId },
+      include: { workspace: true, runs: true },
+    });
+    return session ? { ...session, runs: hydrateRuns(session.runs) } : null;
   }
 
   /**
    * Retrieve a workspace
    */
-  async getWorkspace(payload: { workspaceId: string }): Promise<Workspace | null> {
-    return this.em.findOne(Workspace, { workspaceId: payload.workspaceId });
+  async getWorkspace(payload: { workspaceId: string }) {
+    return this.prisma.workspace.findUnique({
+      where: { workspaceId: payload.workspaceId },
+    });
   }
 
   /**
    * Retrieve a run with events
    */
-  async getRun(payload: { runId: string }): Promise<Run | null> {
-    return this.em.findOne(Run, { runId: payload.runId }, { populate: ['events', 'workspace', 'session'] });
+  async getRun(payload: { runId: string }) {
+    return this.findRunWithEvents(payload);
   }
 
   /**
@@ -115,16 +158,15 @@ export class PersistenceService {
     workspaceId: string;
     workingDir: string;
     name?: string;
-  }): Promise<Workspace> {
-    const workspace = this.em.create(Workspace, {
-      workspaceId: payload.workspaceId,
-      workingDir: payload.workingDir,
-      name: payload.name,
-    });
+  }) {
     fs.mkdirSync(payload.workingDir, { recursive: true });
-    this.em.persist(workspace);
-    await this.em.flush();
-    return workspace;
+    return this.prisma.workspace.create({
+      data: {
+        workspaceId: payload.workspaceId,
+        workingDir: payload.workingDir,
+        name: payload.name ?? null,
+      },
+    });
   }
 
   /**
@@ -136,76 +178,87 @@ export class PersistenceService {
     workspaceId: string;
     outputSchema?: object;
     model?: string;
-  }): Promise<Run> {
-    const runId = uuidv4();
-    const run = this.em.create(Run, {
-      runId,
-      prompt: payload.prompt,
-      session: { sessionId: payload.sessionId } as any,
-      workspace: { workspaceId: payload.workspaceId } as any,
-      outputSchema: payload.outputSchema,
-      model: payload.model,
-      status: RunStatus.RUNNING,
+  }) {
+    const run = await this.prisma.run.create({
+      data: {
+        runId: uuidv4(),
+        prompt: payload.prompt,
+        sessionId: payload.sessionId,
+        workspaceId: payload.workspaceId,
+        outputSchema: serialise(payload.outputSchema),
+        model: payload.model ?? null,
+        status: RunStatus.RUNNING,
+      },
     });
-    this.em.persist(run);
-    await this.em.flush();
-    return run;
+    return hydrateRun(run);
   }
 
   /**
    * Get all workspaces
    */
-  async findAllWorkspaces(): Promise<Workspace[]> {
-    return this.em.find(Workspace, {}, { orderBy: { createdAt: 'DESC' } });
+  async findAllWorkspaces() {
+    return this.prisma.workspace.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
   /**
    * Get workspace with runs
    */
-  async findWorkspace(payload: { workspaceId: string }): Promise<Workspace | null> {
-    return this.em.findOne(Workspace, { workspaceId: payload.workspaceId });
+  async findWorkspace(payload: { workspaceId: string }) {
+    return this.getWorkspace(payload);
   }
 
   /**
    * Get workspace with runs
    */
-  async findWorkspaceWithRuns(payload: { id: string }): Promise<Workspace | null> {
-    return this.em.findOne(Workspace, { workspaceId: payload.id }, { populate: ['runs', 'runs.session'] });
+  async findWorkspaceWithRuns(payload: { id: string }) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { workspaceId: payload.id },
+      include: { runs: { include: { session: true } } },
+    });
+    return workspace ? { ...workspace, runs: hydrateRuns(workspace.runs) } : null;
   }
 
   /**
    * Get all runs
    */
-  async findAllRuns(): Promise<Run[]> {
-    return this.em.find(Run, {}, {
-      orderBy: { startedAt: 'DESC' },
-      populate: ['workspace']
+  async findAllRuns() {
+    const runs = await this.prisma.run.findMany({
+      orderBy: { startedAt: 'desc' },
+      include: { workspace: true },
     });
+    return hydrateRuns(runs);
   }
 
   /**
    * Get run with events
    */
-  async findRunWithEvents(payload: { runId: string }): Promise<Run | null> {
-    return this.em.findOne(Run, { runId: payload.runId }, { populate: ['events', 'workspace', 'session'] });
+  async findRunWithEvents(payload: { runId: string }) {
+    const run = await this.prisma.run.findUnique({
+      where: { runId: payload.runId },
+      include: {
+        events: { orderBy: { sequence: 'asc' } },
+        workspace: true,
+        session: true,
+      },
+    });
+    return hydrateRun(run);
   }
 
   /**
    * Update a workspace
    */
-  async updateWorkspace(payload: {
-    workspaceId: string;
-    name?: string | null;
-  }): Promise<Workspace | null> {
-    const workspace = await this.em.findOne(Workspace, { workspaceId: payload.workspaceId });
-    if (!workspace) return null;
+  async updateWorkspace(payload: { workspaceId: string; name?: string | null }) {
+    const data: Prisma.WorkspaceUpdateInput = {};
+    if (payload.name !== undefined) data.name = payload.name;
 
-    if (payload.name !== undefined) {
-      workspace.name = payload.name;
+    try {
+      return await this.prisma.workspace.update({
+        where: { workspaceId: payload.workspaceId },
+        data,
+      });
+    } catch {
+      return null;
     }
-
-    await this.em.flush();
-    return workspace;
   }
 
   /**
@@ -213,20 +266,12 @@ export class PersistenceService {
    */
   async stopAllRunningRuns(): Promise<number> {
     try {
-      const runningRuns = await this.em.find(Run, { status: RunStatus.RUNNING });
-
-      if (runningRuns.length === 0) {
-        return 0;
-      }
-
-      for (const run of runningRuns) {
-        run.status = RunStatus.STOPPED;
-        run.completedAt = new Date();
-      }
-
-      await this.em.flush();
-      this.logger.log(`Stopped ${runningRuns.length} running run(s)`);
-      return runningRuns.length;
+      const { count } = await this.prisma.run.updateMany({
+        where: { status: RunStatus.RUNNING },
+        data: { status: RunStatus.STOPPED, completedAt: new Date() },
+      });
+      if (count > 0) this.logger.log(`Stopped ${count} running run(s)`);
+      return count;
     } catch (error) {
       this.logger.error('Failed to stop running runs:', error);
       return 0;
@@ -240,31 +285,29 @@ export class PersistenceService {
     name: string;
     description?: string;
     prompt: string;
-  }): Promise<Prompt> {
-    const promptId = uuidv4();
-    const prompt = this.em.create(Prompt, {
-      promptId,
-      name: payload.name,
-      description: payload.description,
-      prompt: payload.prompt,
+  }) {
+    return this.prisma.prompt.create({
+      data: {
+        promptId: uuidv4(),
+        name: payload.name,
+        description: payload.description ?? null,
+        prompt: payload.prompt,
+      },
     });
-    this.em.persist(prompt);
-    await this.em.flush();
-    return prompt;
   }
 
   /**
    * Get all prompts
    */
-  async findAllPrompts(): Promise<Prompt[]> {
-    return this.em.find(Prompt, {}, { orderBy: { createdAt: 'DESC' } });
+  async findAllPrompts() {
+    return this.prisma.prompt.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
   /**
    * Get a prompt by ID
    */
-  async getPrompt(payload: { promptId: string }): Promise<Prompt | null> {
-    return this.em.findOne(Prompt, { promptId: payload.promptId });
+  async getPrompt(payload: { promptId: string }) {
+    return this.prisma.prompt.findUnique({ where: { promptId: payload.promptId } });
   }
 
   /**
@@ -275,33 +318,31 @@ export class PersistenceService {
     name?: string;
     description?: string | null;
     prompt?: string;
-  }): Promise<Prompt | null> {
-    const prompt = await this.em.findOne(Prompt, { promptId: payload.promptId });
-    if (!prompt) return null;
+  }) {
+    const data: Prisma.PromptUpdateInput = {};
+    if (payload.name !== undefined) data.name = payload.name;
+    if (payload.description !== undefined) data.description = payload.description;
+    if (payload.prompt !== undefined) data.prompt = payload.prompt;
 
-    if (payload.name !== undefined) {
-      prompt.name = payload.name;
+    try {
+      return await this.prisma.prompt.update({
+        where: { promptId: payload.promptId },
+        data,
+      });
+    } catch {
+      return null;
     }
-    if (payload.description !== undefined) {
-      prompt.description = payload.description ?? undefined;
-    }
-    if (payload.prompt !== undefined) {
-      prompt.prompt = payload.prompt;
-    }
-
-    await this.em.flush();
-    return prompt;
   }
 
   /**
    * Delete a prompt
    */
   async deletePrompt(payload: { promptId: string }): Promise<boolean> {
-    const prompt = await this.em.findOne(Prompt, { promptId: payload.promptId });
-    if (!prompt) return false;
-
-    this.em.remove(prompt);
-    await this.em.flush();
-    return true;
+    try {
+      await this.prisma.prompt.delete({ where: { promptId: payload.promptId } });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

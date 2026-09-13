@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { MikroORM } from '@mikro-orm/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
@@ -47,12 +46,11 @@ async function bootstrap() {
     jsonDocumentUrl: 'api/openapi.json',
   });
 
-  // Ensure data directory exists and update schema
-  const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'unocomputer.db');
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-
-  const orm = app.get(MikroORM);
-  await orm.getSchemaGenerator().updateSchema();
+  // The database directory must exist before Prisma opens the file. Schema changes are
+  // applied by `prisma migrate deploy`, not at boot - the previous ORM mutated the
+  // schema on every start, which silently rewrote column types out from under it.
+  const dbFile = (process.env.DATABASE_URL ?? '').replace(/^file:/, '');
+  if (dbFile) fs.mkdirSync(path.dirname(dbFile), { recursive: true });
 
   const socketPath = process.env.SOCKET_PATH ?? defaultSocketPath;
   fs.mkdirSync(path.dirname(socketPath), { recursive: true });

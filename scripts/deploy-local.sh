@@ -52,7 +52,7 @@ SERVICE_PATH="$SERVICE_PATH:/usr/bin:/bin:/usr/sbin:/sbin"
 GUI="gui/$(id -u)"
 BACKEND_LABEL="com.$APP_NAME.backend"
 ADMIN_LABEL="com.$APP_NAME.admin"
-DATABASE_PATH_PROD="$DATA_DIR/unocomputer.db"
+DATABASE_URL_PROD="file:$DATA_DIR/unocomputer.db"
 SOCKET_PATH_PROD="$PREFIX/backend.sock"
 # Claude run workspaces. Kept outside the deployment so redeploys never touch them.
 WORKSPACES_DIR_PROD="${WORKSPACES_DIR:-$PREFIX/workspaces}"
@@ -140,7 +140,7 @@ uninstall)
     caddy_active && { caddy reload --config "$BREW_PREFIX/etc/Caddyfile" --adapter caddyfile || true; }
     echo "Caddy hostname removed ($APP_NAME.localhost); its port is free for reuse."
   fi
-  echo "Services removed. Database kept at: $DATABASE_PATH_PROD"
+  echo "Services removed. Database kept at: $DATA_DIR/unocomputer.db"
   echo "Delete it too with: rm -rf \"$PREFIX\" \"$LOG_DIR\""
   ;;
 
@@ -156,6 +156,7 @@ deploy)
 
   echo "==> Packaging backend (pnpm deploy)"
   pnpm --filter backend --prod deploy --legacy "$STAGE/backend"
+  pnpm --filter backend exec prisma generate --schema "$STAGE/backend/prisma/schema.prisma" >/dev/null
 
   echo "==> Packaging admin (next standalone)"
   cp -R apps/admin/.next/standalone "$STAGE/admin"
@@ -163,10 +164,28 @@ deploy)
   cp -R apps/admin/.next/static "$STAGE/admin/apps/admin/.next/static"
   [ -d apps/admin/public ] && cp -R apps/admin/public "$STAGE/admin/apps/admin/public"
 
-  # No migration step: MikroORM's schema generator runs updateSchema() during
-  # bootstrap, so the backend brings its own database up to date on first start.
-  echo "==> Database ($DATABASE_PATH_PROD)"
+  echo "==> Database ($DATABASE_URL_PROD)"
   mkdir -p "$DATA_DIR" "$LOG_DIR" "$WORKSPACES_DIR_PROD"
+
+  # Schema changes are applied here, not at boot. Three cases:
+  #   fresh database          -> migrate deploy creates everything
+  #   already baselined       -> migrate deploy applies anything new
+  #   pre-Prisma (MikroORM)   -> has tables but no _prisma_migrations, so migrate deploy
+  #                              refuses with P3005. Convert the json-declared columns,
+  #                              then record the init migration as already applied.
+  DB_FILE="${DATABASE_URL_PROD#file:}"
+  if [ -f "$DB_FILE" ] \
+     && [ -n "$(sqlite3 "$DB_FILE" "select name from sqlite_master where type='table' and name='run' limit 1")" ] \
+     && [ -z "$(sqlite3 "$DB_FILE" "select name from sqlite_master where type='table' and name='_prisma_migrations' limit 1")" ]; then
+    echo "    pre-Prisma database detected - converting json columns and baselining"
+    cp "$DB_FILE" "$DB_FILE.pre-prisma.bak"
+    sqlite3 "$DB_FILE" < apps/backend/prisma/baseline/json-columns-to-text.sql
+    DATABASE_URL="$DATABASE_URL_PROD" pnpm --filter backend exec \
+      prisma migrate resolve --applied "$(basename "$(ls -d apps/backend/prisma/migrations/*_init | head -1)")"
+    echo "    backup kept at $DB_FILE.pre-prisma.bak"
+  fi
+
+  DATABASE_URL="$DATABASE_URL_PROD" pnpm --filter backend exec prisma migrate deploy
 
   echo "==> Installing to $PREFIX"
   bootout "$BACKEND_LABEL"
@@ -181,7 +200,7 @@ deploy)
   WRITE_PLIST_ENV="NODE_ENV=production
 PATH=$SERVICE_PATH
 SOCKET_PATH=$SOCKET_PATH_PROD
-DATABASE_PATH=$DATABASE_PATH_PROD
+DATABASE_URL=$DATABASE_URL_PROD
 WORKSPACES_DIR=$WORKSPACES_DIR_PROD" \
     write_plist "$BACKEND_LABEL" "$PREFIX/backend" "$LOG_DIR/backend.log" \
     "$NODE_BIN" "$PREFIX/backend/dist/main.js"
@@ -231,7 +250,7 @@ BACKEND_SOCKET=$SOCKET_PATH_PROD" \
   echo "  api        $APP_URL/api      ($b)"
   echo "  port       $ADMIN_PORT"
   echo "  socket     $SOCKET_PATH_PROD"
-  echo "  data       $DATABASE_PATH_PROD"
+  echo "  data       $DATA_DIR/unocomputer.db"
   echo "  workspaces $WORKSPACES_DIR_PROD"
   echo "  logs       $LOG_DIR/"
   ;;

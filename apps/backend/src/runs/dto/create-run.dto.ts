@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsObject, IsOptional, Matches, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class RunDto {
+export class CreateRunDto {
   @ApiProperty({
     description: 'The prompt to execute with Claude',
     example: 'Write a function that calculates fibonacci numbers'

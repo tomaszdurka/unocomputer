@@ -1,6 +1,6 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {PersistenceService} from "../database/persistence.service";
-import {RunStatus} from "../database/entities";
+import { RunStatus } from "../database/types";
 import {RunOptions} from "./dto/run-options";
 import {ClaudeService} from "../claude/claude.service";
 import {GeminiService} from "../gemini/gemini.service";
@@ -40,8 +40,9 @@ export class RunsService {
     let prompt = run.prompt
     let model = run.model;
 
-    if (session.runs.length > 0) {
-      const lastRun = session.runs[session.runs.length - 1];
+    const sessionRuns = session.runs ?? [];
+    if (sessionRuns.length > 0) {
+      const lastRun = sessionRuns[sessionRuns.length - 1];
       const lastModel = lastRun.model
       if (!model) {
         model = lastModel
