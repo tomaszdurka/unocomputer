@@ -1,6 +1,10 @@
 import { getWorkspace } from '#/lib/api';
 import WorkspaceDetailView from '#/components/workspaces/WorkspaceDetailView';
 
+// Live data over the backend socket; Next cannot infer that from a node:http
+// call the way it could from fetch(), so opt out of prerendering explicitly.
+export const dynamic = 'force-dynamic';
+
 export default async function WorkspaceDetailPage({ params }) {
   const { workspaceId } = await params;
   let workspace = null;
