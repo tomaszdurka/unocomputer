@@ -2,15 +2,11 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Badge } from '#/components/ui/badge';
-import { Button } from '#/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card';
-import { Input } from '#/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select';
-import { Separator } from '#/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@app/ui/select';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
 import { queueRun } from '#/lib/api';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Separator } from '@app/ui';
 
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));

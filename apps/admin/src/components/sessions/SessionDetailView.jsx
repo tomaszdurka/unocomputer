@@ -2,13 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Badge } from '#/components/ui/badge';
-import { Button } from '#/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card';
-import { Separator } from '#/components/ui/separator';
 import { queueRun } from '#/lib/api';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Separator } from '@app/ui';
 
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -35,6 +32,39 @@ function statusBadgeClass(status) {
   if (status === 'stopped') return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
   return 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 }
+
+const runColumns = [
+  {
+    key: 'prompt',
+    header: 'Prompt',
+    cell: (run) => (
+      <div className="min-w-0">
+        <p className="truncate font-medium">{run.prompt || 'No prompt'}</p>
+        <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
+          {run.runId}
+        </p>
+      </div>
+    )
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '110px',
+    cell: (run) => (
+      <Badge variant="outline" className={statusBadgeClass(run.status)}>
+        {run.status}
+      </Badge>
+    )
+  },
+  { key: 'elapsed', header: 'Elapsed', width: '110px', cell: (run) => elapsedForRun(run) },
+  {
+    key: 'started',
+    header: 'Started',
+    width: '220px',
+    className: 'whitespace-nowrap text-gray-500 dark:text-neutral-400',
+    cell: (run) => run.startedAt
+  }
+];
 
 export default function SessionDetailView({ session }) {
   const [showRunDialog, setShowRunDialog] = useState(false);
@@ -105,45 +135,14 @@ export default function SessionDetailView({ session }) {
         submitButtonText="Run Prompt"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Runs ({sorted.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="grid gap-3 border-b bg-muted/40 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.13em] text-muted-foreground lg:grid-cols-[minmax(0,3fr)_110px_110px_190px]">
-            <span>Prompt</span>
-            <span>Status</span>
-            <span>Elapsed</span>
-            <span>Started</span>
-          </div>
-          <ul className="divide-y">
-            {sorted.map((run) => (
-              <li key={run.runId}>
-                <Link href={`/runs/${run.runId}`} className="block px-4 py-4 transition hover:bg-muted/40">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_110px_110px_190px]">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{run.prompt || 'No prompt'}</p>
-                      <p className="mt-1 font-mono text-[11px] text-muted-foreground">{run.runId}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <Badge variant="outline" className={statusBadgeClass(run.status)}>
-                        {run.status}
-                      </Badge>
-                    </div>
-                    <div className="text-xs">{elapsedForRun(run)}</div>
-                    <div className="text-xs text-muted-foreground">{run.startedAt}</div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-            {sorted.length === 0 ? (
-              <li className="p-10 text-center text-sm text-muted-foreground">
-                No runs in this session yet.
-              </li>
-            ) : null}
-          </ul>
-        </CardContent>
-      </Card>
+      <DataTable
+        title={`Runs (${sorted.length})`}
+        columns={runColumns}
+        rows={sorted}
+        rowKey={(run) => run.runId}
+        rowHref={(run) => `/runs/${run.runId}`}
+        empty="No runs in this session yet."
+      />
     </div>
   );
 }

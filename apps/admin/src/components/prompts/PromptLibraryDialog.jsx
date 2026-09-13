@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '#/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '#/components/ui/dialog';
-import { Input } from '#/components/ui/input';
-import { Badge } from '#/components/ui/badge';
 import { listPrompts, createPrompt, deletePrompt } from '#/lib/api';
 import { Plus, Trash2 } from 'lucide-react';
+import { Badge, Button, Input } from '@app/ui';
 
 export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt }) {
   const [prompts, setPrompts] = useState([]);

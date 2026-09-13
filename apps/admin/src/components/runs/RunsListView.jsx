@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@app/ui';
-import { Badge } from '#/components/ui/badge';
+import { Badge } from '@app/ui';
 
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));

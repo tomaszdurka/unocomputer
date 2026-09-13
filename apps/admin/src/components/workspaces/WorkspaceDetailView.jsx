@@ -4,15 +4,54 @@ import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Badge } from '#/components/ui/badge';
-import { Button } from '#/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card';
-import { Input } from '#/components/ui/input';
-import { Separator } from '#/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '#/components/ui/dialog';
 import { updateWorkspace, getWorkspaceFile, queueRun } from '#/lib/api';
 import { Edit2, Check, X, FileText, Play, Copy } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Input, Separator } from '@app/ui';
+
+const sessionStatusClass = (status) =>
+  status === 'success' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900' :
+  status === 'running' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900' :
+  status === 'failure' ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900' :
+  status === 'stopped' ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900' :
+  'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
+
+const sessionColumns = [
+  {
+    key: 'sessionId',
+    header: 'Session ID',
+    className: 'truncate',
+    cell: (session) => <span className="font-mono font-medium">{session.sessionId}</span>
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '110px',
+    cell: (session) => (
+      <Badge variant="outline" className={sessionStatusClass(session.status)}>
+        {session.status}
+      </Badge>
+    )
+  },
+  {
+    key: 'runs',
+    header: 'Runs',
+    width: '110px',
+    cell: (session) => (
+      <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
+        {session.runCount} run{session.runCount !== 1 ? 's' : ''}
+      </Badge>
+    )
+  },
+  {
+    key: 'lastUsed',
+    header: 'Last Activity',
+    width: '220px',
+    className: 'whitespace-nowrap text-gray-500 dark:text-neutral-400',
+    cell: (session) => session.lastUsed
+  }
+];
 
 export default function WorkspaceDetailView({ workspace }) {
   const [isEditingName, setIsEditingName] = useState(false);
@@ -315,57 +354,14 @@ export default function WorkspaceDetailView({ workspace }) {
         submitButtonText="Run Prompt"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sessions ({sessions.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="grid gap-3 border-b bg-muted/40 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.13em] text-muted-foreground lg:grid-cols-[minmax(0,2fr)_110px_100px_190px]">
-            <span>Session ID</span>
-            <span>Status</span>
-            <span>Runs</span>
-            <span>Last Activity</span>
-          </div>
-          <ul className="divide-y">
-            {sessions.map((session) => {
-              const statusClass =
-                session.status === 'success' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900' :
-                session.status === 'running' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900' :
-                session.status === 'failure' ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900' :
-                session.status === 'stopped' ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900' :
-                'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
-
-              return (
-                <li key={session.sessionId}>
-                  <Link href={`/sessions/${session.sessionId}`} className="block px-4 py-4 transition hover:bg-muted/40">
-                    <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_110px_100px_190px]">
-                      <div className="min-w-0">
-                        <p className="truncate font-mono text-sm font-semibold">{session.sessionId}</p>
-                      </div>
-                      <div className="text-sm">
-                        <Badge variant="outline" className={statusClass}>
-                          {session.status}
-                        </Badge>
-                      </div>
-                      <div className="text-sm">
-                        <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
-                          {session.runCount} run{session.runCount !== 1 ? 's' : ''}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">{session.lastUsed}</div>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-            {sessions.length === 0 ? (
-              <li className="p-10 text-center text-sm text-muted-foreground">
-                No sessions in this workspace yet.
-              </li>
-            ) : null}
-          </ul>
-        </CardContent>
-      </Card>
+      <DataTable
+        title={`Sessions (${sessions.length})`}
+        columns={sessionColumns}
+        rows={sessions}
+        rowKey={(session) => session.sessionId}
+        rowHref={(session) => `/sessions/${session.sessionId}`}
+        empty="No sessions in this workspace yet."
+      />
     </div>
   );
 }
