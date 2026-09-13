@@ -1,6 +1,10 @@
 import { getRun } from '#/lib/api';
 import RunDetailView from '#/components/runs/RunDetailView';
 
+// Live data over the backend socket; Next cannot infer that from a node:http
+// call the way it could from fetch(), so opt out of prerendering explicitly.
+export const dynamic = 'force-dynamic';
+
 export default async function RunDetailPage({ params }) {
   const { runId } = await params;
   let run = null;
