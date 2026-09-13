@@ -31,6 +31,14 @@
     --radius: 0.5rem;
   }
 
+  /* Bare `border` resolves to Tailwind's default border colour (gray-200), which does
+     not follow the theme - every Card, Separator and Badge outline stayed light grey in
+     dark mode. Point the default at the token instead, so `border` means `border-border`
+     everywhere. This is the base rule shadcn ships; it was missing here. */
+  * {
+    @apply border-border;
+  }
+
   .dark {
     --background: 0 0% 4%;
     --foreground: 0 0% 96%;

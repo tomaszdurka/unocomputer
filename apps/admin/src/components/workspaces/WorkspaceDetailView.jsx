@@ -348,7 +348,7 @@ export default function WorkspaceDetailView({ workspace }) {
                         </Badge>
                       </div>
                       <div className="text-sm">
-                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                        <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
                           {session.runCount} run{session.runCount !== 1 ? 's' : ''}
                         </Badge>
                       </div>
