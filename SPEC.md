@@ -115,7 +115,7 @@ Get workspace details with sessions
 
 **Buffered Mode (with schema):**
 ```bash
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -132,7 +132,7 @@ curl -X POST http://localhost:3100/runs/claude \
 
 **Streaming Mode (no schema):**
 ```bash
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{
@@ -407,7 +407,8 @@ npm run build:ui
 npm run start:ui
 ```
 
-The UI runs on port 3101 by default and communicates with the API on port 3100.
+The UI is the only thing bound to a port (OS-assigned in dev, 7802 when deployed behind Caddy).
+The API binds no TCP port: it listens on a unix socket and the UI proxies `/api/*` to it.
 
 ## Deployment
 

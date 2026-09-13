@@ -17,7 +17,7 @@
 
 ```
 src/
-├── main.ts                    # NestJS bootstrap, port 3100
+├── main.ts                    # NestJS bootstrap; unix socket, global /api prefix
 ├── app.module.ts              # Root module (imports RunsModule, ConfigModule)
 ├── claude/
 │   ├── claude.module.ts       # Provides ClaudeService
@@ -119,16 +119,16 @@ src/
 ### Testing Locally
 
 ```bash
-npm run start:dev
+pnpm dev     # prints the OS-assigned admin port; or use the deployed hostname
 
 # Buffered request
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"prompt": "What is 2+2?"}'
 
 # Streaming request
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{"prompt": "Explain async/await"}'
@@ -136,7 +136,8 @@ curl -X POST http://localhost:3100/runs/claude \
 
 ### Deployment Considerations
 
-- **Vercel**: Uses `vercel.json` config, routes all to `server.js`
+- **Local deployment**: `pnpm deploy:local` - launchd agents, Next standalone,
+  backend on a unix socket, admin behind Caddy at http://uno-computer.localhost
 - **Production**: Add auth, rate limiting, input validation
 - **Workspaces**: Consider cleanup strategy for old workspaces
 - **Scaling**: Each request spawns a `claude` process - resource intensive
