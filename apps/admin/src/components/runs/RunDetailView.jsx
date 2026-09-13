@@ -60,11 +60,11 @@ function EventRow({ event }) {
         onClick={() => setOpen((x) => !x)}
       >
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-200">
+          <Badge variant="outline" className="bg-indigo-100 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
             {event.type}
           </Badge>
           <span>{event.createdAt}</span>
-          <span>#{event.eventId}</span>
+          <span>#{event.id}</span>
         </div>
         {payloadPreview ? (
           <div className="mt-2">
@@ -275,7 +275,7 @@ export default function RunDetailView({ run }) {
           <div className="relative space-y-3 pl-2">
             <div className="timeline-rail absolute left-[13px] top-2 bottom-2" />
             {filteredEvents.map((event) => (
-              <EventRow key={event.eventId} event={event} />
+              <EventRow key={event.id} event={event} />
             ))}
             {filteredEvents.length === 0 ? (
               <p className="text-sm text-muted-foreground">No events match current filters.</p>
