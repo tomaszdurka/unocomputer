@@ -160,7 +160,7 @@ export default function WorkspaceDetailView({ workspace }) {
                 <button
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="p-2 text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                  className="p-2 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
                   title="Cancel"
                 >
                   <X className="h-5 w-5" />
@@ -175,7 +175,7 @@ export default function WorkspaceDetailView({ workspace }) {
                 </h2>
                 <button
                   onClick={() => setIsEditingName(true)}
-                  className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                  className="p-2 text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition"
                   title="Edit name"
                 >
                   <Edit2 className="h-5 w-5" />
@@ -200,7 +200,7 @@ export default function WorkspaceDetailView({ workspace }) {
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedFile === file
                       ? 'border-b-2 border-mint text-mint'
-                      : 'text-slate-600 hover:text-slate-900'
+                      : 'text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100'
                   }`}
                 >
                   {file}
@@ -212,7 +212,7 @@ export default function WorkspaceDetailView({ workspace }) {
                 <div className="text-sm text-muted-foreground">Loading...</div>
               </div>
             ) : fileError ? (
-              <div className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700">
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-400">
                 {fileError}
               </div>
             ) : (
@@ -220,25 +220,25 @@ export default function WorkspaceDetailView({ workspace }) {
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-4 text-slate-900" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mt-5 mb-3 text-slate-900" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2 text-slate-900" {...props} />,
-                    h4: ({node, ...props}) => <h4 className="text-base font-semibold mt-3 mb-2 text-slate-900" {...props} />,
-                    h5: ({node, ...props}) => <h5 className="text-sm font-semibold mt-3 mb-2 text-slate-900" {...props} />,
-                    h6: ({node, ...props}) => <h6 className="text-sm font-semibold mt-3 mb-2 text-slate-700" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-4 text-slate-700 leading-relaxed" {...props} />,
-                    ul: ({node, ...props}) => <ul className="mb-4 ml-6 list-disc space-y-2 text-slate-700" {...props} />,
-                    ol: ({node, ...props}) => <ol className="mb-4 ml-6 list-decimal space-y-2 text-slate-700" {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h4: ({node, ...props}) => <h4 className="text-base font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h5: ({node, ...props}) => <h5 className="text-sm font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h6: ({node, ...props}) => <h6 className="text-sm font-semibold mt-3 mb-2 text-gray-700 dark:text-neutral-300" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-4 text-gray-700 dark:text-neutral-300 leading-relaxed" {...props} />,
+                    ul: ({node, ...props}) => <ul className="mb-4 ml-6 list-disc space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
+                    ol: ({node, ...props}) => <ol className="mb-4 ml-6 list-decimal space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
                     li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-slate-300 pl-4 my-4 italic text-slate-600" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 dark:border-neutral-700 pl-4 my-4 italic text-gray-600 dark:text-neutral-400" {...props} />,
                     code: ({node, inline, ...props}) =>
                       inline
-                        ? <code className="bg-slate-100 text-rose-600 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
-                        : <code className="block bg-slate-100 p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono" {...props} />,
-                    pre: ({node, ...props}) => <pre className="bg-slate-100 p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
+                        ? <code className="bg-gray-100 dark:bg-neutral-800 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
+                        : <code className="block bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono" {...props} />,
+                    pre: ({node, ...props}) => <pre className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
                     a: ({node, ...props}) => <a className="text-mint hover:underline font-medium" {...props} />,
-                    hr: ({node, ...props}) => <hr className="my-6 border-slate-200" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-semibold text-slate-900" {...props} />,
+                    hr: ({node, ...props}) => <hr className="my-6 border-gray-200 dark:border-neutral-800" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-semibold text-gray-900 dark:text-neutral-100" {...props} />,
                     em: ({node, ...props}) => <em className="italic" {...props} />,
                   }}
                 >
@@ -271,13 +271,13 @@ export default function WorkspaceDetailView({ workspace }) {
               <span className="relative inline-block ml-2">
                 <button
                   onClick={handleCopyPath}
-                  className="text-muted-foreground hover:text-slate-600 inline-flex items-center gap-1.5 group/path transition"
+                  className="text-muted-foreground hover:text-gray-600 dark:hover:text-neutral-400 inline-flex items-center gap-1.5 group/path transition"
                 >
                   <span>{workspace.workingDir}</span>
-                  <Copy className="h-3 w-3 text-slate-400 opacity-0 group-hover/path:opacity-100 transition" />
+                  <Copy className="h-3 w-3 text-gray-400 dark:text-neutral-500 opacity-0 group-hover/path:opacity-100 transition" />
                 </button>
                 {copiedPath && (
-                  <span className="absolute right-0 top-full mt-1 bg-slate-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
+                  <span className="absolute right-0 top-full mt-1 bg-gray-900 dark:bg-neutral-100 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
                     Copied!
                   </span>
                 )}
@@ -329,11 +329,11 @@ export default function WorkspaceDetailView({ workspace }) {
           <ul className="divide-y">
             {sessions.map((session) => {
               const statusClass =
-                session.status === 'success' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                session.status === 'running' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                session.status === 'failure' ? 'bg-rose-100 text-rose-900 border-rose-200' :
-                session.status === 'stopped' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                'bg-slate-100 text-slate-700 border-slate-200';
+                session.status === 'success' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900' :
+                session.status === 'running' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900' :
+                session.status === 'failure' ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900' :
+                session.status === 'stopped' ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900' :
+                'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 
               return (
                 <li key={session.sessionId}>

@@ -8,9 +8,10 @@ module.exports = {
   theme: {
   	extend: {
   		colors: {
-  			ink: '#111315',
-  			mist: '#f4f7fa',
-  			steel: '#5f6b7a',
+  			// The one brand colour. Everything else comes from the neutral gray scale
+  			// or the shadcn tokens below. Do not add bare colour names that collide
+  			// with a Tailwind scale (`rose`, `amber`, ...) - a string replaces the
+  			// whole scale and every `rose-500` in the app silently stops emitting CSS.
   			mint: '#1f8f75',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

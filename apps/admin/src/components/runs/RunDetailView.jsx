@@ -31,11 +31,11 @@ function elapsedForRun(run) {
 }
 
 function statusBadgeClass(status) {
-  if (status === 'success') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-  if (status === 'running') return 'bg-blue-100 text-blue-800 border-blue-200';
-  if (status === 'failure') return 'bg-rose-100 text-rose-900 border-rose-200';
-  if (status === 'stopped') return 'bg-amber-100 text-amber-800 border-amber-200';
-  return 'bg-slate-100 text-slate-700 border-slate-200';
+  if (status === 'success') return 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
+  if (status === 'running') return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900';
+  if (status === 'failure') return 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900';
+  if (status === 'stopped') return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
+  return 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 }
 
 function EventRow({ event }) {
@@ -54,7 +54,7 @@ function EventRow({ event }) {
 
   return (
     <div className="relative pl-8">
-      <div className="absolute left-0 top-[18px] h-3 w-3 rounded-sm bg-slate-500" />
+      <div className="absolute left-0 top-[18px] h-3 w-3 rounded-sm bg-gray-500 dark:bg-neutral-500" />
       <div
         className="rounded-xl border bg-card p-3 transition hover:bg-muted/40 cursor-pointer"
         onClick={() => setOpen((x) => !x)}
