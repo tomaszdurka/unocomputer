@@ -1,4 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common';
+import { CliEvent } from '../lib/json';
 import path from "node:path";
 import * as fs from "node:fs";
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
@@ -70,7 +71,7 @@ export class CodexService {
             args,
             cwd: workspace.workingDir,
             env,
-            onLine: (event: any) => {
+            onLine: (event: CliEvent) => {
                 options.onOutput?.(event);
             },
         });
@@ -95,12 +96,13 @@ export class CodexService {
         try {
             const cmd = `find ~/.codex/sessions -name "*.jsonl" -exec grep -lF "[SESSION-ID=${session.sessionId}]" {} + 2>/dev/null | sed -E 's/.*-([a-f0-9-]{36})\\.jsonl/\\1/'`;
             const codexSessionId = execSync(cmd, {encoding: 'utf8'}).split("\n")[0];
-            if (!!codexSessionId) {
+            if (codexSessionId) {
                 fs.writeFileSync(codexSessionPath, codexSessionId);
                 return codexSessionId;
             }
-        } catch (e) {
-        }
+        } catch {
+      // Best effort: a missing or malformed session file just means no id to resume.
+    }
         return null;
     }
 

@@ -1,7 +1,8 @@
 import {Injectable, Logger} from '@nestjs/common';
+import { CliEvent } from '../lib/json';
 import path from "node:path";
 import * as fs from "node:fs";
-import {Run, Session} from '../database/types';
+import { Session } from '../database/types';
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 import {readFileSync} from "fs";
@@ -63,8 +64,6 @@ export class GeminiService {
     const env = { ...process.env };
     this.logger.log(`gemini ${args.join(' ')}`);
 
-    let sequence = 0
-
     const assistantMessages: string[] = []
     let assistantMessageBuffer = ''
     await executeCommandWithJsonStreamOutput({
@@ -72,8 +71,7 @@ export class GeminiService {
       args,
       cwd: workspace.workingDir,
       env,
-      onLine: (event: any) => {
-        sequence++;
+      onLine: (event: CliEvent) => {
         if (event.type === 'message' && event.role === 'assistant') {
           assistantMessageBuffer += event.content;
         }
@@ -95,8 +93,9 @@ export class GeminiService {
         const resultString = lastMatch[1];
         try {
           structuredResult = JSON.parse(resultString);
-        } catch (e) {
-        }
+        } catch {
+      // Best effort: a missing or malformed session file just means no id to resume.
+    }
       }
     }
 
@@ -126,11 +125,12 @@ export class GeminiService {
     try {
       const cmd = `find ~/.gemini/tmp -name "*.json" -exec grep -lF "[SESSION-ID=${session.sessionId}]" {} + | xargs grep -m 1 "sessionId" | sed -E 's/.*"sessionId":[[:space:]]*"([^"]+)".*/\\1/' | head -n 1`;
       const geminiSessionId = execSync(cmd, {encoding: 'utf8'}).trim();
-      if (!!geminiSessionId) {
+      if (geminiSessionId) {
         fs.writeFileSync(geminiSessionPath, geminiSessionId);
         return geminiSessionId;
       }
-    } catch (e) {
+    } catch {
+      // Best effort: a missing or malformed session file just means no id to resume.
     }
     return null;
   }

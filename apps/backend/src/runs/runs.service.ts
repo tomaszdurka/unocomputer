@@ -1,7 +1,8 @@
 import {Injectable, Logger} from '@nestjs/common';
+import { CliEvent } from '../lib/json';
 import {PersistenceService} from "../database/persistence.service";
 import { RunStatus } from "../database/types";
-import {RunOptions} from "./dto/run-options";
+import {RunOptions, RunResult} from "./dto/run-options";
 import {ClaudeService} from "../claude/claude.service";
 import {GeminiService} from "../gemini/gemini.service";
 import {CodexService} from "../codex/codex.service";
@@ -33,7 +34,7 @@ export class RunsService {
   }
 
 
-  async run(options: RunOptions): Promise<unknown> {
+  async run(options: RunOptions): Promise<RunResult> {
     const {run, session, workspace} = options
     const {runId} = run
 
@@ -62,7 +63,7 @@ export class RunsService {
       run: {...run, prompt},
       session,
       workspace,
-      onOutput: (event: any) => {
+      onOutput: (event: CliEvent) => {
         sequence++;
         options.onOutput?.(event);
         this.persistence.storeEvent({

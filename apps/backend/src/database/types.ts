@@ -4,6 +4,7 @@
 // that is what the SQLite columns hold. PersistenceService parses them on the way out,
 // so what actually flows through the app is the parsed object - these aliases say so
 // rather than letting callers believe they have a string.
+import type { JsonValue } from '../lib/json';
 import type {
   Run as PrismaRun,
   RunEvent as PrismaRunEvent,
@@ -24,12 +25,12 @@ export type Workspace = PrismaWorkspace & {
 export type Prompt = PrismaPrompt;
 
 export type RunEvent = Omit<PrismaRunEvent, 'payload'> & {
-  payload: any;
+  payload: JsonValue;
 };
 
 export type Run = Omit<PrismaRun, 'outputSchema' | 'result'> & {
-  outputSchema?: any;
-  result?: any;
+  outputSchema?: JsonValue;
+  result?: JsonValue;
   events?: RunEvent[];
   session?: Session;
   workspace?: Workspace;

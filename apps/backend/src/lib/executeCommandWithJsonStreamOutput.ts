@@ -1,11 +1,12 @@
 import {spawn} from "child_process";
+import { CliEvent } from './json';
 
 export async function executeCommandWithJsonStreamOutput(options: {
     command: string;
     args: string[];
     cwd: string;
     env?: NodeJS.ProcessEnv;
-    onLine?: (parsed: any) => void;
+    onLine?: (parsed: CliEvent) => void;
 }): Promise<number | null> {
     return new Promise((resolve, reject) => {
         const child = spawn(options.command, options.args, {

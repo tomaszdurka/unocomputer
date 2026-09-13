@@ -1,91 +1,45 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* shadcn's token contract, retuned from slate to the neutral gray the app-template
-   uses, with mint as the primary. These feed the hsl(var(--token)) utilities that
-   components/ui/* are built on - keep every value as a bare "H S% L%" triplet, and
-   never redeclare them outside this layer (an unlayered :root would win the cascade
-   and silently break every token utility). */
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 221 39% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 221 39% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 221 39% 11%;
-    --primary: 166 64% 34%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 221 39% 11%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 221 39% 11%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 166 64% 34%;
-    --radius: 0.5rem;
-  }
+/* Scan template-owned UI components (outside this app) for Tailwind classes. */
+@source '../../../../libs/ui/src';
 
-  /* Bare `border` resolves to Tailwind's default border colour (gray-200), which does
-     not follow the theme - every Card, Separator and Badge outline stayed light grey in
-     dark mode. Point the default at the token instead, so `border` means `border-border`
-     everywhere. This is the base rule shadcn ships; it was missing here. */
-  * {
-    @apply border-border;
-  }
-
-  .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 96%;
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 166 64% 40%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 166 64% 40%;
-  }
-}
+/* Class-based dark mode: `dark:` utilities apply when <html> has the .dark class.
+   The class is managed by the inline theme script in layout.tsx + AppearanceSettings. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* UnoComputer's accent. libs/ui reads these four rather than hardcoding a colour, so
    primary buttons, solid badges, the active nav item, the sidebar brand chip and the
    theme picker all pick up mint without a single change inside the kit. This is the
-   whole of "template shell, our brand".
-
-   The root layout paints body via Tailwind (bg-white / dark:bg-neutral-950), so the
-   page needs no background of its own - just the colour-scheme hint for form controls
-   and scrollbars. */
+   whole of "template shell, our brand". */
 :root {
-  color-scheme: light;
   --ui-accent: #1f8f75;
   --ui-accent-fg: #fff;
   --ui-accent-hover: #1a7a64;
-  --ui-accent-soft: rgb(31 143 117 / 0.1);
+  --ui-accent-soft: --alpha(#1f8f75 / 10%);
 }
-
-.dark {
-  color-scheme: dark;
+html.dark {
   --ui-accent: #25a687;
   --ui-accent-fg: #fff;
   --ui-accent-hover: #1f8f75;
-  --ui-accent-soft: rgb(37 166 135 / 0.15);
+  --ui-accent-soft: --alpha(#25a687 / 15%);
 }
 
+/* Expose the accent as a colour utility too, so `text-mint` / `bg-mint/10` work for
+   app-level markup the kit does not cover. `inline` matters: it makes the utilities emit
+   var(--ui-accent) instead of resolving the value at build time, so they follow the
+   theme like everything else rather than freezing the light-mode colour. */
+@theme inline {
+  --color-mint: var(--ui-accent);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+/* Two app-specific classes. Everything else comes from utilities or libs/ui. */
 .grid-label {
   @apply text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-neutral-400;
 }
