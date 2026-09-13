@@ -1,8 +1,5 @@
-import { Space_Grotesk } from 'next/font/google';
+import { themeInitScript } from '@app/ui';
 import './globals.css';
-import Navigation from '#/components/layout/Navigation';
-
-const grotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'UnoComputer',
@@ -11,9 +8,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={grotesk.className}>
-        <Navigation />
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-screen bg-white text-gray-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
       </body>
     </html>
