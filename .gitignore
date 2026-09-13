@@ -1,7 +1,16 @@
 node_modules/
 dist/
 .env
-./workspaces/
-.vercel
 .env.local
-data/
+.vercel
+*.sock
+
+# Claude run workspaces (backend runtime output). Anchored - there are also
+# source directories named "workspaces" in both apps that must stay tracked.
+/workspaces/
+/apps/backend/workspaces/
+
+# Local databases and runtime data, at any depth. The root data/ dir itself is
+# kept (it holds the backend socket at runtime) via its .gitkeep.
+**/data/*
+!/data/.gitkeep
