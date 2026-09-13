@@ -1,0 +1,32 @@
+import { listWorkspaces } from '#/lib/api';
+import type { Workspace } from '#/lib/types';
+import WorkspacesListView from '#/components/workspaces/WorkspacesListView';
+
+// Live data over the backend socket; Next cannot infer that from a node:http
+// call the way it could from fetch(), so opt out of prerendering explicitly.
+export const dynamic = 'force-dynamic';
+
+export default async function WorkspacesPage() {
+  let workspaces: Workspace[] = [];
+  let error = null;
+
+  try {
+    workspaces = await listWorkspaces();
+  } catch (err: unknown) {
+    error = (err instanceof Error ? err.message : String(err));
+  }
+
+  return (
+    <div className="container mx-auto max-w-7xl px-4 py-8">
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Workspaces</h1>
+      {error ? (
+        <div className="rounded-lg border bg-rose-50 dark:bg-rose-950/40 p-6">
+          <div className="text-rose-900 dark:text-rose-300 font-semibold">Error loading workspaces</div>
+          <div className="text-sm text-rose-700 dark:text-rose-400 mt-2">{error}</div>
+        </div>
+      ) : (
+        <WorkspacesListView workspaces={workspaces} />
+      )}
+    </div>
+  );
+}

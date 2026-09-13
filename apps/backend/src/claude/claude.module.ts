@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ClaudeService } from './claude.service';
 import { PersistenceModule } from '../database/persistence.module';
 

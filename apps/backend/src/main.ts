@@ -39,7 +39,7 @@ async function bootstrap() {
     .addTag('runs', 'Claude run execution and querying')
     .addTag('workspaces', 'Workspace management and querying')
   const document = SwaggerModule.createDocument(app, config.build(), {
-    operationIdFactory: (controllerKey: string, methodKey: string, version?: string) => methodKey,
+    operationIdFactory: (_controllerKey: string, methodKey: string) => methodKey,
   });
   // The API root serves its own docs: /api -> swagger UI, /api/openapi.json -> raw spec.
   SwaggerModule.setup('api', app, document, {

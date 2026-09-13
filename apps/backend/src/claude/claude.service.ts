@@ -1,4 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common';
+import { CliEvent } from '../lib/json';
 import path from "node:path";
 import * as fs from "node:fs";
 import { Run } from '../database/types';
@@ -62,26 +63,29 @@ export class ClaudeService {
 
     this.logger.log(`claude ${args.join(' ')}`);
 
-    let result: any = null;
+    let result: RunResult | null = null;
 
     await executeCommandWithJsonStreamOutput({
       command: 'claude',
       args,
       cwd: workspace.workingDir,
       env,
-      onLine: (event: any) => {
+      onLine: (event: CliEvent) => {
         if (event.type === 'result' || event.type === 'result_success') {
           result = {
-            result: event.result,
+            result: typeof event.result === 'string' ? event.result : JSON.stringify(event.result ?? null),
+            ...(event.structured_output !== undefined
+              ? { structuredResult: event.structured_output }
+              : {}),
           };
-          if (event.structured_output) {
-            result.structuredResult = event.structured_output
-          }
         }
         options.onOutput?.(event);
       },
     });
 
+    if (!result) {
+      throw new Error('claude exited without emitting a result event');
+    }
     return result;
   }
 }

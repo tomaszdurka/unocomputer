@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { CliEvent, JsonValue } from '../lib/json';
+import type { Run } from './types';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'node:fs';
@@ -15,7 +17,7 @@ function serialise(value: unknown): string | null {
   return JSON.stringify(value);
 }
 
-function parse(value: string | null): any {
+function parse(value: string | null): JsonValue | undefined {
   if (value === null || value === undefined) return undefined;
   try {
     return JSON.parse(value);
@@ -26,22 +28,31 @@ function parse(value: string | null): any {
   }
 }
 
-function hydrateEvent<T extends { payload: string }>(event: T) {
+type RawEvent = { payload: string };
+type RawRun = {
+  outputSchema?: string | null;
+  result?: string | null;
+  events?: RawEvent[];
+};
+
+function hydrateEvent<T extends RawEvent>(event: T) {
   return { ...event, payload: parse(event.payload) };
 }
 
-function hydrateRun(run: any): any {
-  if (!run) return run;
+function hydrateRun<T extends RawRun>(run: T): Run;
+function hydrateRun<T extends RawRun>(run: T | null): Run | null;
+function hydrateRun<T extends RawRun>(run: T | null): Run | null {
+  if (!run) return null;
   return {
     ...run,
     outputSchema: parse(run.outputSchema ?? null),
     result: parse(run.result ?? null),
     ...(run.events ? { events: run.events.map(hydrateEvent) } : {}),
-  };
+  } as unknown as Run;
 }
 
-function hydrateRuns(rows: any[] | undefined | null): any[] {
-  return rows ? rows.map(hydrateRun) : [];
+function hydrateRuns<T extends RawRun>(rows: T[] | undefined | null): Run[] {
+  return rows ? rows.map((row) => hydrateRun(row)) : [];
 }
 
 @Injectable()
@@ -55,7 +66,7 @@ export class PersistenceService {
    */
   async storeEvent(payload: {
     runId: string;
-    event: any;
+    event: CliEvent;
     sequence: number;
   }): Promise<void> {
     try {

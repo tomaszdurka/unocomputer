@@ -1,15 +1,14 @@
-import { Controller, Get, Post, Param, Body, Res, Headers, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Res, Headers, NotFoundException, BadRequestException } from '@nestjs/common';
+import { CliEvent, JsonObject } from '../lib/json';
 import type { Run } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
 import { RunDto } from '../database/dto';
 import { CreateRunDto } from './dto/create-run.dto';
+import type { RunResult } from './dto/run-options';
 import { PersistenceService } from '../database/persistence.service';
-import { ClaudeService } from '../claude/claude.service';
 import { v4 as uuidv4 } from 'uuid';
 import {RunsService} from "./runs.service";
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 @ApiTags('runs')
 @Controller('runs')
@@ -132,7 +131,7 @@ export class RunsController {
           type: 'string',
           description: 'Newline-delimited JSON stream of events'
         }
-      } as any
+      } as JsonObject
     }
   })
   async executeRun(
@@ -145,7 +144,7 @@ export class RunsController {
     const isStreaming = accept?.includes('application/x-ndjson');
     let clientDisconnected = false;
 
-    const writeEvent = (event: any) => {
+    const writeEvent = (event: CliEvent | RunResult) => {
       if (!clientDisconnected) {
         res.write(JSON.stringify({
           timestamp: new Date().toISOString(),
