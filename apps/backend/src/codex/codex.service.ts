@@ -5,7 +5,16 @@ import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonS
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 import {execSync} from "node:child_process";
 import {readFileSync} from "fs";
-import {Session} from "../database/entities";
+import {Session} from '../database/types';
+
+// Sessions only carry their workspace when the query included it. Every caller here
+// loads one that did, so an absent workspace is a wiring bug, not a runtime condition.
+function requireWorkspace(session: Session) {
+  if (!session.workspace) {
+    throw new Error(`Session ${session.sessionId} was loaded without its workspace`);
+  }
+  return session.workspace;
+}
 
 
 @Injectable()
@@ -96,7 +105,7 @@ export class CodexService {
     }
 
     getSessionDirectory(session: Session) {
-        const sessionPath = path.join(session.workspace.workingDir, '.codex', session.sessionId);
+        const sessionPath = path.join(requireWorkspace(session).workingDir, '.codex', session.sessionId);
         fs.mkdirSync(sessionPath, {recursive: true});
         return sessionPath;
     }

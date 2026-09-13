@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Param, Patch, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import type { Workspace } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
-import { Workspace } from '../database/entities';
+import { WorkspaceDto } from '../database/dto';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
@@ -17,7 +18,7 @@ export class WorkspacesController {
   @Post()
   @ApiOperation({ summary: 'Create workspace', description: 'Create a new workspace with optional AGENTS.md' })
   @ApiBody({ type: CreateWorkspaceDto })
-  @ApiResponse({ status: 201, description: 'Workspace created successfully', type: Workspace })
+  @ApiResponse({ status: 201, description: 'Workspace created successfully', type: WorkspaceDto })
   async createWorkspace(@Body() createDto: CreateWorkspaceDto): Promise<Workspace> {
     const workspaceId = uuidv4();
     const workingDir = process.env.WORKSPACES_DIR
@@ -41,7 +42,7 @@ export class WorkspacesController {
 
   @Get()
   @ApiOperation({ summary: 'List all workspaces', description: 'Get a list of all Claude workspaces' })
-  @ApiResponse({ status: 200, description: 'List of workspaces', type: [Workspace] })
+  @ApiResponse({ status: 200, description: 'List of workspaces', type: [WorkspaceDto] })
   async listWorkspaces(): Promise<Workspace[]> {
     return await this.db.findAllWorkspaces();
   }
@@ -49,7 +50,7 @@ export class WorkspacesController {
   @Get(':workspaceId')
   @ApiOperation({ summary: 'Get workspace details', description: 'Get detailed information about a workspace including all its runs' })
   @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @ApiResponse({ status: 200, description: 'Workspace details with runs', type: Workspace })
+  @ApiResponse({ status: 200, description: 'Workspace details with runs', type: WorkspaceDto })
   @ApiResponse({ status: 404, description: 'Workspace not found' })
   async getWorkspace(@Param('workspaceId') workspaceId: string): Promise<Workspace> {
     const workspace = await this.db.findWorkspaceWithRuns({ id: workspaceId });
@@ -65,7 +66,7 @@ export class WorkspacesController {
   @ApiOperation({ summary: 'Update workspace', description: 'Update workspace properties like name' })
   @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiBody({ type: UpdateWorkspaceDto })
-  @ApiResponse({ status: 200, description: 'Workspace updated successfully', type: Workspace })
+  @ApiResponse({ status: 200, description: 'Workspace updated successfully', type: WorkspaceDto })
   @ApiResponse({ status: 404, description: 'Workspace not found' })
   async updateWorkspace(
     @Param('workspaceId') workspaceId: string,

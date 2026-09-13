@@ -1,0 +1,92 @@
+// Introspected from the existing MikroORM-created SQLite database, then mapped back to
+// the camelCase names the API and the admin already use. The physical column names are
+// MikroORM's (snake_case, and FKs spelled <relation>_<pk>), so every field carries an
+// explicit @map rather than renaming columns under a live database.
+//
+// output_schema / result / payload were declared `json` by MikroORM. SQLite has no JSON
+// type - those columns hold JSON text - and Prisma's SQLite connector maps a `json`
+// declaration to Unsupported(), which the client cannot read or write at all. They are
+// declared String here and (de)serialised in PersistenceService.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  workspaceId String    @id @map("workspace_id")
+  workingDir  String    @map("working_dir")
+  name        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  runs        Run[]
+  sessions    Session[]
+
+  @@map("workspace")
+}
+
+model Session {
+  sessionId   String    @id @map("session_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  workspaceId String    @map("workspace_workspace_id")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [workspaceId], onDelete: NoAction)
+  runs        Run[]
+
+  @@index([workspaceId], map: "session_workspace_workspace_id_index")
+  @@map("session")
+}
+
+model Run {
+  runId         String     @id @map("run_id")
+  prompt        String
+  model         String?
+  outputSchema  String?    @map("output_schema")
+  status        String     @default("running")
+  result        String?
+  exitCode      Int?       @map("exit_code")
+  startedAt     DateTime   @default(now()) @map("started_at")
+  completedAt   DateTime?  @map("completed_at")
+  lastHeartbeat DateTime?  @updatedAt @map("last_heartbeat")
+  sessionId     String     @map("session_session_id")
+  workspaceId   String     @map("workspace_workspace_id")
+
+  session       Session    @relation(fields: [sessionId], references: [sessionId], onDelete: NoAction)
+  workspace     Workspace  @relation(fields: [workspaceId], references: [workspaceId], onDelete: NoAction)
+  events        RunEvent[]
+
+  @@index([workspaceId], map: "run_workspace_workspace_id_index")
+  @@index([sessionId], map: "run_session_session_id_index")
+  @@map("run")
+}
+
+model RunEvent {
+  id        String   @id
+  type      String
+  payload   String
+  sequence  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  runId     String   @map("run_run_id")
+
+  run       Run      @relation(fields: [runId], references: [runId], onDelete: NoAction)
+
+  @@index([runId], map: "run_event_run_run_id_index")
+  @@map("run_event")
+}
+
+model Prompt {
+  promptId    String   @id @map("prompt_id")
+  name        String
+  description String?
+  prompt      String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("prompt")
+}

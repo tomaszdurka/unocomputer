@@ -1,4 +1,4 @@
-import {Run, Session, Workspace} from "../../database/entities";
+import {Run, Session, Workspace} from '../../database/types';
 
 export type RunOptions = {
     run: Run;

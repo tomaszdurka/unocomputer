@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Param, Body, Res, Headers, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import type { Run } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
-import { Run } from '../database/entities';
-import { RunDto } from './dto/run.dto';
+import { RunDto } from '../database/dto';
+import { CreateRunDto } from './dto/create-run.dto';
 import { PersistenceService } from '../database/persistence.service';
 import { ClaudeService } from '../claude/claude.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +20,7 @@ export class RunsController {
   ) {
   }
 
-  private async prepareRun(dto: RunDto) {
+  private async prepareRun(dto: CreateRunDto) {
     let workspace;
     let session;
 
@@ -83,7 +84,7 @@ export class RunsController {
       }
     }
   })
-  async queueRun(@Body() dto: RunDto, @Res() res: Response): Promise<void> {
+  async queueRun(@Body() dto: CreateRunDto, @Res() res: Response): Promise<void> {
     const { run, session, workspace } = await this.prepareRun(dto);
 
     // Start job asynchronously
@@ -135,7 +136,7 @@ export class RunsController {
     }
   })
   async executeRun(
-    @Body() dto: RunDto,
+    @Body() dto: CreateRunDto,
     @Headers('accept') accept: string,
     @Res() res: Response,
   ): Promise<void> {
@@ -178,7 +179,7 @@ export class RunsController {
 
   @Get()
   @ApiOperation({ summary: 'List all runs', description: 'Get a list of all Claude runs across all workspaces' })
-  @ApiResponse({ status: 200, description: 'List of runs', type: [Run] })
+  @ApiResponse({ status: 200, description: 'List of runs', type: [RunDto] })
   async listRuns(): Promise<Run[]> {
     return await this.persistence.findAllRuns();
   }
@@ -186,7 +187,7 @@ export class RunsController {
   @Get(':runId')
   @ApiOperation({ summary: 'Get run details', description: 'Get detailed information about a specific run including all events' })
   @ApiParam({ name: 'runId'})
-  @ApiResponse({ status: 200, description: 'Run details with events', type: Run })
+  @ApiResponse({ status: 200, description: 'Run details with events', type: RunDto })
   @ApiResponse({ status: 404, description: 'Run not found' })
   async getRun(@Param('runId') runId: string): Promise<Run> {
     const run = await this.persistence.findRunWithEvents({ runId });

@@ -1,11 +1,20 @@
 import {Injectable, Logger} from '@nestjs/common';
 import path from "node:path";
 import * as fs from "node:fs";
-import {Run, Session} from '../database/entities';
+import {Run, Session} from '../database/types';
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 import {readFileSync} from "fs";
 import {execSync} from "node:child_process";
+
+// Sessions only carry their workspace when the query included it. Every caller here
+// loads one that did, so an absent workspace is a wiring bug, not a runtime condition.
+function requireWorkspace(session: Session) {
+  if (!session.workspace) {
+    throw new Error(`Session ${session.sessionId} was loaded without its workspace`);
+  }
+  return session.workspace;
+}
 
 
 @Injectable()
@@ -127,7 +136,7 @@ export class GeminiService {
   }
 
   getSessionDirectory(session: Session) {
-    const sessionPath = path.join(session.workspace.workingDir, '.gemini', session.sessionId);
+    const sessionPath = path.join(requireWorkspace(session).workingDir, '.gemini', session.sessionId);
     fs.mkdirSync(sessionPath, {recursive: true});
     return sessionPath;
   }

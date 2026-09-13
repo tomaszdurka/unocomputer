@@ -1,7 +1,7 @@
 import {Injectable, Logger} from '@nestjs/common';
 import path from "node:path";
 import * as fs from "node:fs";
-import { Run } from '../database/entities';
+import { Run } from '../database/types';
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 
@@ -16,7 +16,7 @@ export class ClaudeService {
 
 
     // Check if this is the first run in the session (no completed runs yet)
-    const sessionRuns = session.runs?.getItems() || [];
+    const sessionRuns = session.runs ?? [];
     const isFirstRun = sessionRuns.filter((r: Run) => r.runId !== runId).length === 0;
 
     // Create initial CLAUDE.md file if needed
