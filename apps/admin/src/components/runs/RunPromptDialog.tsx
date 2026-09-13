@@ -77,7 +77,7 @@ export default function RunPromptDialog({
       if (runSchema.trim()) {
         try {
           schema = JSON.parse(runSchema);
-        } catch (err: unknown) {
+        } catch {
           setRunError('Invalid JSON schema format');
           setIsSubmitting(false);
           return;

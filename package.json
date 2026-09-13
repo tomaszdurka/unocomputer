@@ -5,14 +5,16 @@
   "private": true,
   "packageManager": "pnpm@10.34.5",
   "scripts": {
-    "dev": "pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
-    "test": "pnpm -r run test",
+    "deploy:local": "bash scripts/deploy-local.sh",
+    "dev": "pnpm --parallel -r run dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "pnpm -r run lint",
-    "typecheck": "pnpm -r run typecheck",
     "quality": "pnpm -r run quality",
     "start": "pnpm --parallel -r run start",
-    "deploy:local": "bash scripts/deploy-local.sh"
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck"
   },
   "keywords": [
     "claude",
@@ -31,5 +33,14 @@
       "prisma",
       "sharp"
     ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.4.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.0"
   }
 }

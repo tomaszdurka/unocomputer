@@ -29,7 +29,7 @@ export async function executeCommandWithJsonStreamOutput(options: {
                     try {
                         const event = JSON.parse(line);
                         options.onLine?.(event);
-                    } catch (err) {
+                    } catch {
                         console.error(`Failed to parse JSON: ${line}`);
                     }
                 }

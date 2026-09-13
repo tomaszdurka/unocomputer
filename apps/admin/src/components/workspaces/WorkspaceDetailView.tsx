@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import type { Run, Workspace, WorkspaceSessionSummary } from '#/lib/types';
 import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -258,26 +257,26 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h4: ({node, ...props}) => <h4 className="text-base font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h5: ({node, ...props}) => <h5 className="text-sm font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h6: ({node, ...props}) => <h6 className="text-sm font-semibold mt-3 mb-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-4 text-gray-700 dark:text-neutral-300 leading-relaxed" {...props} />,
-                    ul: ({node, ...props}) => <ul className="mb-4 ml-6 list-disc space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    ol: ({node, ...props}) => <ol className="mb-4 ml-6 list-decimal space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 dark:border-neutral-700 pl-4 my-4 italic text-gray-600 dark:text-neutral-400" {...props} />,
-                    code: ({node, className, ...props}) =>
+                    h1: ({ ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h2: ({ ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h3: ({ ...props }) => <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h4: ({ ...props }) => <h4 className="text-base font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h5: ({ ...props }) => <h5 className="text-sm font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
+                    h6: ({ ...props }) => <h6 className="text-sm font-semibold mt-3 mb-2 text-gray-700 dark:text-neutral-300" {...props} />,
+                    p: ({ ...props }) => <p className="mb-4 text-gray-700 dark:text-neutral-300 leading-relaxed" {...props} />,
+                    ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
+                    ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
+                    li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
+                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-gray-300 dark:border-neutral-700 pl-4 my-4 italic text-gray-600 dark:text-neutral-400" {...props} />,
+                    code: ({ className, ...props }) =>
                       className?.startsWith('language-')
                         ? <code className={`block bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono ${className}`} {...props} />
                         : <code className="bg-gray-100 dark:bg-neutral-800 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
-                    pre: ({node, ...props}) => <pre className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
-                    a: ({node, ...props}) => <a className="text-mint hover:underline font-medium" {...props} />,
-                    hr: ({node, ...props}) => <hr className="my-6 border-gray-200 dark:border-neutral-800" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-semibold text-gray-900 dark:text-neutral-100" {...props} />,
-                    em: ({node, ...props}) => <em className="italic" {...props} />,
+                    pre: ({ ...props }) => <pre className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
+                    a: ({ ...props }) => <a className="text-mint hover:underline font-medium" {...props} />,
+                    hr: ({ ...props }) => <hr className="my-6 border-gray-200 dark:border-neutral-800" {...props} />,
+                    strong: ({ ...props }) => <strong className="font-semibold text-gray-900 dark:text-neutral-100" {...props} />,
+                    em: ({ ...props }) => <em className="italic" {...props} />,
                   }}
                 >
                   {fileContent}
