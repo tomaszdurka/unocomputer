@@ -1,5 +1,5 @@
 {
-  "name": "uno-computer",
+  "name": "unocomputer",
   "version": "1.0.0",
   "description": "UnoComputer - Local Model API with workspace isolation",
   "private": true,

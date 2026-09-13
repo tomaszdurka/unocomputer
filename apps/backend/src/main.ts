@@ -47,7 +47,7 @@ async function bootstrap() {
   });
 
   // Ensure data directory exists and update schema
-  const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'uno-computer.db');
+  const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'unocomputer.db');
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
   const orm = app.get(MikroORM);

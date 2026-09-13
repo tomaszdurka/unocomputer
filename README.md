@@ -40,7 +40,7 @@ The backend binds no TCP port at all: it listens on the unix socket
 | | URL |
 | --- | --- |
 | Dev | OS-assigned - `pnpm dev` prints `- Local: http://localhost:<port>` |
-| Deployed | http://uno-computer.localhost (Caddy -> 127.0.0.1:7802) |
+| Deployed | http://unocomputer.localhost (Caddy -> 127.0.0.1:7802) |
 | API docs | `<base>/api` (swagger UI), `<base>/api/openapi.json` (raw spec) |
 
 Dev deliberately defaults to `PORT=0` so it never collides with another
@@ -57,7 +57,7 @@ pnpm deploy:local uninstall   # remove services, keep the database
 ```
 
 This runs the app in the background across reboots, with its own database at
-`~/Library/Application Support/uno-computer/data/uno-computer.db` - entirely
+`~/Library/Application Support/unocomputer/data/unocomputer.db` - entirely
 separate from whatever your dev server is using. The port is allocated from
 7800 up by scanning `$(brew --prefix)/etc/caddy.d`, which doubles as the
 registry shared with other apps deployed the same way.
@@ -67,7 +67,7 @@ registry shared with other apps deployed the same way.
 ### Buffered Mode (with schema)
 
 ```bash
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -85,7 +85,7 @@ curl -X POST http://uno-computer.localhost/api/runs \
 ### Streaming Mode
 
 ```bash
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{
@@ -101,7 +101,7 @@ UnoComputer includes a Next.js 16 dashboard for visual management:
 - **Workspaces** - Manage isolated project environments
 - **Sessions** - Track conversation continuity across multiple runs
 
-Access the dashboard at `http://uno-computer.localhost` once deployed, or at the
+Access the dashboard at `http://unocomputer.localhost` once deployed, or at the
 OS-assigned port `pnpm dev` prints.
 
 ## Documentation
