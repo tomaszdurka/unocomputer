@@ -11,7 +11,8 @@
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "quality": "pnpm -r run quality",
-    "start": "pnpm --parallel -r run start"
+    "start": "pnpm --parallel -r run start",
+    "deploy:local": "bash scripts/deploy-local.sh"
   },
   "keywords": [
     "claude",

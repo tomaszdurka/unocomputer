@@ -29,26 +29,45 @@ By using UnoComputer, you acknowledge and accept these risks and responsibilitie
 ## Quick Start
 
 ```bash
-# Install dependencies for both projects
-npm run install:all
-
-# Start API server
-npm run dev:api
-
-# Start UI (in another terminal)
-npm run dev:ui
-
-# API: http://localhost:3100
-# UI Dashboard: http://localhost:3101
-# Swagger Docs: http://localhost:3100/api
+pnpm install
+pnpm dev          # runs backend + admin in parallel
 ```
+
+There is only ever **one** port, and the browser only ever talks to the admin.
+The backend binds no TCP port at all: it listens on the unix socket
+`data/backend.sock`, and the admin proxies `/api/*` to it.
+
+| | URL |
+| --- | --- |
+| Dev | OS-assigned - `pnpm dev` prints `- Local: http://localhost:<port>` |
+| Deployed | http://uno-computer.localhost (Caddy -> 127.0.0.1:7802) |
+| API docs | `<base>/api` (swagger UI), `<base>/api/openapi.json` (raw spec) |
+
+Dev deliberately defaults to `PORT=0` so it never collides with another
+checkout, worktree, or a running deployment. Pin it with `PORT=4100 pnpm dev`
+if you want a stable URL for a while.
+
+### Deploy locally
+
+```bash
+pnpm deploy:local             # build, install as launchd agents, register with Caddy
+pnpm deploy:local status      # service state + health
+pnpm deploy:local logs        # tail both logs
+pnpm deploy:local uninstall   # remove services, keep the database
+```
+
+This runs the app in the background across reboots, with its own database at
+`~/Library/Application Support/uno-computer/data/uno-computer.db` - entirely
+separate from whatever your dev server is using. The port is allocated from
+7800 up by scanning `$(brew --prefix)/etc/caddy.d`, which doubles as the
+registry shared with other apps deployed the same way.
 
 ## Example Usage
 
 ### Buffered Mode (with schema)
 
 ```bash
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -66,7 +85,7 @@ curl -X POST http://localhost:3100/runs/claude \
 ### Streaming Mode
 
 ```bash
-curl -X POST http://localhost:3100/runs/claude \
+curl -X POST http://uno-computer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{
@@ -82,7 +101,8 @@ UnoComputer includes a Next.js 16 dashboard for visual management:
 - **Workspaces** - Manage isolated project environments
 - **Sessions** - Track conversation continuity across multiple runs
 
-Access the dashboard at `http://localhost:3101` after starting the UI server.
+Access the dashboard at `http://uno-computer.localhost` once deployed, or at the
+OS-assigned port `pnpm dev` prints.
 
 ## Documentation
 

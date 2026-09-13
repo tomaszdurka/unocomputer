@@ -7,6 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
 
+  // Self-contained production server (used by scripts/deploy-local.sh).
+  output: 'standalone',
+
   // The monorepo root, so tracing and the dev server agree on where the workspace
   // starts instead of inferring it.
   outputFileTracingRoot: path.join(__dirname, '../..'),
