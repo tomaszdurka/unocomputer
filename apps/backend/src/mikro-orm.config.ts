@@ -5,7 +5,7 @@ import * as path from 'path';
 
 const config: Options = {
   driver: BetterSqliteDriver,
-  dbName: process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'uno-computer.db'),
+  dbName: process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'unocomputer.db'),
   entities: [Workspace, Session, Run, RunEvent, Prompt],
   allowGlobalContext: true,
 };

@@ -14,7 +14,7 @@ set -euo pipefail
 # Layout:
 #   ~/Library/Application Support/<name>/backend   deployed backend
 #   ~/Library/Application Support/<name>/admin     deployed admin (Next standalone)
-#   ~/Library/Application Support/<name>/data      SQLite database (uno-computer.db)
+#   ~/Library/Application Support/<name>/data      SQLite database (unocomputer.db)
 #   ~/Library/Logs/<name>/                         backend.log, admin.log
 #   ~/Library/LaunchAgents/com.<name>.{backend,admin}.plist
 #
@@ -52,7 +52,7 @@ SERVICE_PATH="$SERVICE_PATH:/usr/bin:/bin:/usr/sbin:/sbin"
 GUI="gui/$(id -u)"
 BACKEND_LABEL="com.$APP_NAME.backend"
 ADMIN_LABEL="com.$APP_NAME.admin"
-DATABASE_PATH_PROD="$DATA_DIR/uno-computer.db"
+DATABASE_PATH_PROD="$DATA_DIR/unocomputer.db"
 SOCKET_PATH_PROD="$PREFIX/backend.sock"
 # Claude run workspaces. Kept outside the deployment so redeploys never touch them.
 WORKSPACES_DIR_PROD="${WORKSPACES_DIR:-$PREFIX/workspaces}"

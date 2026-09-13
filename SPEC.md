@@ -115,7 +115,7 @@ Get workspace details with sessions
 
 **Buffered Mode (with schema):**
 ```bash
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -132,7 +132,7 @@ curl -X POST http://uno-computer.localhost/api/runs \
 
 **Streaming Mode (no schema):**
 ```bash
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{

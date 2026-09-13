@@ -122,13 +122,13 @@ src/
 pnpm dev     # prints the OS-assigned admin port; or use the deployed hostname
 
 # Buffered request
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"prompt": "What is 2+2?"}'
 
 # Streaming request
-curl -X POST http://uno-computer.localhost/api/runs \
+curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
   -H "Accept: application/x-ndjson" \
   -d '{"prompt": "Explain async/await"}'
@@ -137,7 +137,7 @@ curl -X POST http://uno-computer.localhost/api/runs \
 ### Deployment Considerations
 
 - **Local deployment**: `pnpm deploy:local` - launchd agents, Next standalone,
-  backend on a unix socket, admin behind Caddy at http://uno-computer.localhost
+  backend on a unix socket, admin behind Caddy at http://unocomputer.localhost
 - **Production**: Add auth, rate limiting, input validation
 - **Workspaces**: Consider cleanup strategy for old workspaces
 - **Scaling**: Each request spawns a `claude` process - resource intensive
