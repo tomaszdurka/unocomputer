@@ -7,9 +7,10 @@ import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// The backend is not exposed on a TCP port. It listens on a unix domain socket and the
+// The backend has no TCP port. It listens on a unix domain socket (SOCKET_PATH) and the
 // admin proxies /api/* to it, so the browser only ever talks to the admin's single port.
-// Set PORT to listen on 127.0.0.1:<port> instead (debugging escape hatch).
+// For direct debugging: curl --unix-socket <socket> http://localhost/api/..., or bridge
+// with socat if a tool can't speak sockets.
 const defaultSocketPath = path.resolve(process.cwd(), '../../data/backend.sock');
 
 async function bootstrap() {
@@ -53,18 +54,12 @@ async function bootstrap() {
   const orm = app.get(MikroORM);
   await orm.getSchemaGenerator().updateSchema();
 
-  if (process.env.PORT) {
-    await app.listen(process.env.PORT, '127.0.0.1');
-    console.log(`UnoComputer API listening on 127.0.0.1:${process.env.PORT}`);
-    console.log(`Swagger documentation at http://127.0.0.1:${process.env.PORT}/api`);
-  } else {
-    const socketPath = process.env.SOCKET_PATH ?? defaultSocketPath;
-    fs.mkdirSync(path.dirname(socketPath), { recursive: true });
-    fs.rmSync(socketPath, { force: true });
-    await app.listen(socketPath);
-    console.log(`UnoComputer API listening on unix socket ${socketPath}`);
-    console.log('Reachable through the admin at /api');
-  }
+  const socketPath = process.env.SOCKET_PATH ?? defaultSocketPath;
+  fs.mkdirSync(path.dirname(socketPath), { recursive: true });
+  fs.rmSync(socketPath, { force: true });
+  await app.listen(socketPath);
+  console.log(`UnoComputer API listening on unix socket ${socketPath}`);
+  console.log('Reachable through the admin at /api');
 }
 
 bootstrap();
