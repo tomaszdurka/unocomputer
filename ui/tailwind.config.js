@@ -13,8 +13,6 @@ module.exports = {
   			mist: '#f4f7fa',
   			steel: '#5f6b7a',
   			mint: '#1f8f75',
-  			amber: '#b87c16',
-  			rose: '#a72f45',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
