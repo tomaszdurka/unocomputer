@@ -13,6 +13,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@app/ui':
+        specifier: workspace:*
+        version: link:../../libs/ui
       '@radix-ui/react-popover':
         specifier: ^1.1.15
         version: 1.1.15(@types/react@19.2.14)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -135,6 +138,15 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+
+  libs/ui:
+    dependencies:
+      next:
+        specifier: '*'
+        version: 16.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react:
+        specifier: '*'
+        version: 19.0.0
 
 packages:
 

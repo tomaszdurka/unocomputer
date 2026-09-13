@@ -8,6 +8,7 @@
     "start": "next start -p 3101"
   },
   "dependencies": {
+    "@app/ui": "workspace:*",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.8",
