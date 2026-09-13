@@ -3,10 +3,18 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./dialog": "./src/Dialog.jsx",
+    "./popover": "./src/Popover.jsx",
+    "./select": "./src/Select.jsx"
   },
   "peerDependencies": {
     "next": "*",
     "react": "*"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6"
   }
 }

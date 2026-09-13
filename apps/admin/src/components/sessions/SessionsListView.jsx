@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { DataTable } from '@app/ui';
-import { Badge } from '#/components/ui/badge';
+import { Badge } from '@app/ui';
 
 function formatDate(dateString) {
   if (!dateString) return '-';

@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Button } from '#/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '#/components/ui/dialog';
-import { Badge } from '#/components/ui/badge';
 import { X, ArrowDownNarrowWide } from 'lucide-react';
 import PromptSelector from '#/components/prompts/PromptSelector';
+import { Badge, Button } from '@app/ui';
 
 export default function RunPromptDialog({
   open,

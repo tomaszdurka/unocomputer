@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '#/components/ui/button';
-import { Input } from '#/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@app/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '#/components/ui/dialog';
 import { listPrompts, createPrompt, deletePrompt } from '#/lib/api';
 import { BookmarkPlus, Plus, Trash2 } from 'lucide-react';
+import { Button, Input } from '@app/ui';
 
 export default function PromptSelector({ onSelect }) {
   const [prompts, setPrompts] = useState([]);

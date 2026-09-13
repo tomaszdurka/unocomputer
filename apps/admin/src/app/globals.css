@@ -62,15 +62,28 @@
   }
 }
 
-/* The root layout paints body via Tailwind (bg-white / dark:bg-neutral-950), so the
+/* UnoComputer's accent. libs/ui reads these four rather than hardcoding a colour, so
+   primary buttons, solid badges, the active nav item, the sidebar brand chip and the
+   theme picker all pick up mint without a single change inside the kit. This is the
+   whole of "template shell, our brand".
+
+   The root layout paints body via Tailwind (bg-white / dark:bg-neutral-950), so the
    page needs no background of its own - just the colour-scheme hint for form controls
    and scrollbars. */
 :root {
   color-scheme: light;
+  --ui-accent: #1f8f75;
+  --ui-accent-fg: #fff;
+  --ui-accent-hover: #1a7a64;
+  --ui-accent-soft: rgb(31 143 117 / 0.1);
 }
 
 .dark {
   color-scheme: dark;
+  --ui-accent: #25a687;
+  --ui-accent-fg: #fff;
+  --ui-accent-hover: #1f8f75;
+  --ui-accent-soft: rgb(37 166 135 / 0.15);
 }
 
 .grid-label {
