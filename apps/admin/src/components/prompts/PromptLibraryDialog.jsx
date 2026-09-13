@@ -138,7 +138,7 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
                           e.stopPropagation();
                           handleDeletePrompt(prompt.promptId);
                         }}
-                        className="ml-3 p-2 text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        className="ml-3 p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg opacity-0 group-hover:opacity-100 transition"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

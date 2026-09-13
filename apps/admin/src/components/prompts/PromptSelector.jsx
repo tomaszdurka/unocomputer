@@ -118,7 +118,7 @@ export default function PromptSelector({ onSelect }) {
                     </div>
                     <button
                       onClick={(e) => handleDeletePrompt(e, prompt.promptId)}
-                      className="p-1 text-rose-600 hover:bg-rose-50 rounded opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                      className="p-1 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded opacity-0 group-hover:opacity-100 transition flex-shrink-0"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

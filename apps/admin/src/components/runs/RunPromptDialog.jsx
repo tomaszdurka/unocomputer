@@ -131,7 +131,7 @@ export default function RunPromptDialog({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium">
-                  {selectedSavedPrompt ? 'Additional Instructions' : 'Prompt'} <span className="text-rose-600">*</span>
+                  {selectedSavedPrompt ? 'Additional Instructions' : 'Prompt'} <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <PromptSelector onSelect={handleSelectPrompt} />
               </div>
@@ -142,7 +142,7 @@ export default function RunPromptDialog({
                   </Badge>
                   <button
                     onClick={handleCopyPromptToTextarea}
-                    className="px-2 py-1 text-xs rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition flex items-center gap-1"
+                    className="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-700 dark:text-neutral-300 hover:text-gray-900 dark:hover:text-neutral-100 transition flex items-center gap-1"
                     title="Copy to textarea to edit"
                     type="button"
                   >
@@ -150,7 +150,7 @@ export default function RunPromptDialog({
                   </button>
                   <button
                     onClick={handleRemoveSavedPrompt}
-                    className="ml-auto p-1 text-slate-600 hover:text-rose-600 transition"
+                    className="ml-auto p-1 text-gray-600 dark:text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 transition"
                     title="Remove saved prompt"
                     type="button"
                   >
@@ -179,12 +179,12 @@ export default function RunPromptDialog({
               />
             </div>
             {runError && (
-              <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 p-3 text-sm text-rose-700 dark:text-rose-400">
                 {runError}
               </div>
             )}
             {runSuccess && (
-              <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 p-3 text-sm text-emerald-700 dark:text-emerald-400">
                 {runSuccess}
               </div>
             )}

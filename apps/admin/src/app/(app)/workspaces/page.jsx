@@ -17,11 +17,11 @@ export default async function WorkspacesPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Workspaces</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Workspaces</h1>
       {error ? (
-        <div className="rounded-lg border bg-rose-50 p-6">
-          <div className="text-rose-900 font-semibold">Error loading workspaces</div>
-          <div className="text-sm text-rose-700 mt-2">{error}</div>
+        <div className="rounded-lg border bg-rose-50 dark:bg-rose-950/40 p-6">
+          <div className="text-rose-900 dark:text-rose-300 font-semibold">Error loading workspaces</div>
+          <div className="text-sm text-rose-700 dark:text-rose-400 mt-2">{error}</div>
         </div>
       ) : (
         <WorkspacesListView workspaces={workspaces} />
