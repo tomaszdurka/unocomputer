@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { queueRun } from '#/lib/api';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Separator } from '@app/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable } from '@app/ui';
 import type { Column } from '@app/ui';
 
 function formatElapsed(ms: number) {

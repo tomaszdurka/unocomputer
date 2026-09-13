@@ -5,7 +5,7 @@ import type { Prompt } from '#/lib/types';
 import { Dialog, DialogContent } from '@app/ui/dialog';
 import { listPrompts, createPrompt, deletePrompt } from '#/lib/api';
 import { Plus, Trash2 } from 'lucide-react';
-import { Badge, Button, Input } from '@app/ui';
+import { Button, Input } from '@app/ui';
 
 export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt }: {
   open: boolean;

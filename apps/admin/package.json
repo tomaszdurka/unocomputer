@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p ${PORT:-0}",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint .",
     "quality": "pnpm lint && pnpm typecheck",
     "start": "next start -p ${PORT:-0}",
     "typecheck": "tsc --noEmit"
@@ -25,9 +25,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.3.0",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.5",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4.3.3",
-    "typescript": "~5.9.3"
+    "tailwindcss": "^4.3.3"
   }
 }
