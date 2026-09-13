@@ -2,128 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-  --bg: #f4f6fb;
-  --card: #ffffff;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: #dbe2ef;
-  --line-strong: #c4cfdf;
-  --accent: #0f766e;
-}
-
-body {
-  background: radial-gradient(1200px 500px at 0% -20%, #e5ecfb 0%, transparent 60%), var(--bg);
-  color: var(--ink);
-  @apply antialiased;
-}
-
-.ds-shell {
-  @apply mx-auto min-h-screen max-w-7xl p-6 md:p-10;
-}
-
-.ds-title {
-  @apply text-3xl font-bold tracking-tight;
-}
-
-.ds-subtitle {
-  color: var(--muted);
-  @apply mt-1 text-sm;
-}
-
-.surface {
-  border: 1px solid var(--line);
-  background: var(--card);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 30px rgba(15, 23, 42, 0.03);
-  @apply rounded-2xl;
-}
-
-.ds-card-title {
-  @apply mb-4 text-base font-semibold;
-}
-
-.ds-input,
-.ds-select {
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
-  @apply w-full rounded-xl px-3 py-2 text-sm outline-none;
-}
-
-.ds-input:focus,
-.ds-select:focus {
-  border-color: var(--line-strong);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
-}
-
-.ds-label {
-  color: var(--muted);
-  @apply text-[11px] font-semibold uppercase tracking-[0.14em];
-}
-
-.ds-muted {
-  color: var(--muted);
-}
-
-.ds-button {
-  border: 1px solid var(--line);
-  @apply inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50;
-}
-
-.ds-row {
-  border-bottom: 1px solid var(--line);
-  @apply block px-4 py-4 transition hover:bg-slate-50/80;
-}
-
-.ds-row:last-child {
-  border-bottom: none;
-}
-
-.ds-chip {
-  @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide;
-}
-
-.ds-chip-neutral {
-  background: #e2e8f0;
-  color: #334155;
-}
-
-.ds-chip-info {
-  background: #dbeafe;
-  color: #1e3a8a;
-}
-
-.ds-chip-warn {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.ds-chip-ok {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.ds-chip-err {
-  background: #ffe4e6;
-  color: #9f1239;
-}
-
-.grid-label {
-  @apply text-xs font-semibold uppercase tracking-wider;
-  color: var(--muted);
-}
-
-.grid-value {
-  @apply text-sm;
-}
-
-.timeline-rail {
-  border-left: 2px dashed var(--line);
-}
-
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -178,4 +56,31 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+}
+
+:root {
+  color-scheme: light;
+  --page-bg: #f4f6fb;
+  --page-ink: #0f172a;
+}
+
+html {
+  background: var(--page-bg);
+}
+
+body {
+  min-height: 100dvh;
+  background: radial-gradient(1200px 500px at 0% -20%, #e5ecfb 0%, transparent 60%) no-repeat,
+    var(--page-bg);
+  color: var(--page-ink);
+  @apply antialiased;
+}
+
+.grid-label {
+  color: #64748b;
+  @apply text-xs font-semibold uppercase tracking-wider;
+}
+
+.timeline-rail {
+  border-left: 2px dashed #dbe2ef;
 }
