@@ -121,7 +121,7 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
                 {(prompts ?? []).map((prompt) => (
                   <div
                     key={prompt.promptId}
-                    className="border rounded-lg p-3 hover:bg-gray-50 dark:bg-neutral-800/50 transition cursor-pointer group"
+                    className="border rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition cursor-pointer group"
                     onClick={() => handleSelectPrompt(prompt)}
                   >
                     <div className="flex items-start justify-between">

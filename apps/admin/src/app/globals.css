@@ -32,6 +32,27 @@ html.dark {
   --color-mint: var(--ui-accent);
 }
 
+/* Tailwind v4 changed the default border colour from gray-200 to currentColor, so a
+   bare `border` paints with the text colour - white cards' borders in dark mode. v3 hid
+   this behind shadcn's `* { @apply border-border }`, which went away with the token
+   layer. Restore an explicit, theme-aware default. */
+:root {
+  --ui-border: var(--color-gray-200);
+}
+html.dark {
+  --ui-border: var(--color-neutral-800);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--ui-border);
+  }
+}
+
 html {
   color-scheme: light;
 }
