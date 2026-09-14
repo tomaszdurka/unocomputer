@@ -293,7 +293,7 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
             <CardTitle className="text-base">Workspace Info</CardTitle>
             <Button onClick={() => setShowRunDialog(true)}>
               <Play className="h-4 w-4 mr-2" />
-              Run Prompt
+              New Session
             </Button>
           </div>
         </CardHeader>
