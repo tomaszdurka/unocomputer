@@ -6,8 +6,9 @@
     "build": "next build",
     "dev": "next dev -p ${PORT:-0}",
     "lint": "eslint .",
-    "quality": "pnpm lint && pnpm typecheck",
+    "quality": "pnpm lint && pnpm typecheck && pnpm test",
     "start": "next start -p ${PORT:-0}",
+    "test": "jest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -21,11 +22,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.37",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.3.0",
     "dotenv-cli": "^11.0.0",
     "eslint-config-next": "16.1.6",
+    "jest": "^30.5.1",
+    "jest-environment-jsdom": "^30.5.1",
     "tailwindcss": "^4.3.3"
   }
 }
