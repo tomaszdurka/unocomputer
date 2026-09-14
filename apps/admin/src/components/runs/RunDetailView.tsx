@@ -53,7 +53,7 @@ function EventRow({ event }: { event: RunEvent }) {
     <div className="relative pl-8">
       <div className="absolute left-0 top-[18px] h-3 w-3 rounded-sm bg-gray-500 dark:bg-neutral-500" />
       <div
-        className="rounded-xl border bg-white dark:bg-neutral-900 p-3 transition hover:bg-gray-50 dark:bg-neutral-800/50 cursor-pointer"
+        className="rounded-xl border bg-white dark:bg-neutral-900 p-3 transition hover:bg-gray-50 dark:hover:bg-neutral-800/50 cursor-pointer"
         onClick={() => setOpen((x) => !x)}
       >
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-neutral-400">

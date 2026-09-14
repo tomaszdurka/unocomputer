@@ -104,7 +104,7 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
               (prompts ?? []).map((prompt) => (
                 <div
                   key={prompt.promptId}
-                  className="p-2 rounded hover:bg-gray-100 dark:bg-neutral-800 cursor-pointer group"
+                  className="p-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer group"
                   onClick={() => handleSelectPrompt(prompt)}
                 >
                   <div className="flex items-start justify-between gap-2">
