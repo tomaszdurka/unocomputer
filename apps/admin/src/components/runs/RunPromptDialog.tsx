@@ -19,8 +19,9 @@ type RunPromptDialogProps = {
 const MODEL_SUGGESTIONS = [
   'claude',
   'claude:sonnet',
-  'claude:opus',
   'claude:haiku',
+  'claude:opus',
+  'claude:fable',
   'gemini',
   'codex',
 ];
