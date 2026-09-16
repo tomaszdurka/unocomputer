@@ -12,7 +12,7 @@ export class ClaudeService {
   private readonly logger = new Logger(ClaudeService.name);
 
   async run(options: RunOptions): Promise<RunResult> {
-    const {run, session, workspace} = options;
+    const {run, session, workspace, cliModel} = options;
     const {runId, prompt, outputSchema} = run;
 
 
@@ -50,6 +50,12 @@ export class ClaudeService {
       '--permission-mode',
       permissionMode,
     );
+
+    // Pin the model when the run asked for one (e.g. "claude:sonnet");
+    // otherwise the CLI default applies.
+    if (cliModel) {
+      args.push('--model', cliModel);
+    }
 
     // Add schema if provided
     if (outputSchema) {

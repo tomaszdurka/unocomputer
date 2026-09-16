@@ -5,6 +5,8 @@ export type RunOptions = {
     run: Run;
     session: Session;
     workspace: Workspace
+    /** Model to pin on the CLI, parsed from the run's "<provider>:<model>". */
+    cliModel?: string;
     onOutput?: (line: CliEvent) => void;
 }
 

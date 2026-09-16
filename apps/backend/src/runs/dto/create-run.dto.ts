@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsObject, IsOptional, Matches, IsIn } from 'class-validator';
+import { IsString, IsNotEmpty, IsObject, IsOptional, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRunDto {
@@ -40,12 +40,17 @@ export class CreateRunDto {
   sessionId?: string;
 
   @ApiProperty({
-    description: 'Optional model to use (claude, gemini, or codex)',
+    description:
+      'Optional model to use: the CLI (claude, gemini, codex), optionally pinning ' +
+      'the CLI model as "<cli>:<model>" (claude only), e.g. "claude:sonnet" or ' +
+      '"claude:sonnet-4-5". Without the suffix the CLI default applies.',
     required: false,
-    example: 'claude'
+    example: 'claude:sonnet'
   })
   @IsString()
   @IsOptional()
-  @IsIn(['claude', 'gemini', 'codex'], { message: 'model must be claude, gemini, or codex' })
+  @Matches(/^(claude(:[a-zA-Z0-9][a-zA-Z0-9._-]*)?|gemini|codex)$/, {
+    message: 'model must be claude[:<model>], gemini, or codex',
+  })
   model?: string;
 }
