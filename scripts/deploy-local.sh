@@ -56,6 +56,12 @@ DATABASE_URL_PROD="file:$DATA_DIR/unocomputer.db"
 SOCKET_PATH_PROD="$PREFIX/backend.sock"
 # Claude run workspaces. Kept outside the deployment so redeploys never touch them.
 WORKSPACES_DIR_PROD="${WORKSPACES_DIR:-$PREFIX/workspaces}"
+# MCP servers available to every run (Playwright/Chrome). Written once on first
+# deploy, then left alone so it can be edited by hand.
+MCP_CONFIG_PROD="${MCP_CONFIG:-$PREFIX/mcp.json}"
+# Chrome profile for the Playwright MCP server, kept across runs so cookies
+# (e.g. a solved Cloudflare challenge) and logins survive.
+BROWSER_PROFILE_DIR="$PREFIX/browser-profile"
 
 BREW_PREFIX="$(brew --prefix 2>/dev/null || true)"
 CADDY_DIR="${BREW_PREFIX:+$BREW_PREFIX/etc/caddy.d}"
@@ -165,7 +171,26 @@ deploy)
   [ -d apps/admin/public ] && cp -R apps/admin/public "$STAGE/admin/apps/admin/public"
 
   echo "==> Database ($DATABASE_URL_PROD)"
-  mkdir -p "$DATA_DIR" "$LOG_DIR" "$WORKSPACES_DIR_PROD"
+  mkdir -p "$DATA_DIR" "$LOG_DIR" "$WORKSPACES_DIR_PROD" "$BROWSER_PROFILE_DIR"
+
+  if [ ! -f "$MCP_CONFIG_PROD" ]; then
+    echo "==> Writing default MCP config ($MCP_CONFIG_PROD)"
+    cat > "$MCP_CONFIG_PROD" <<JSON
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser", "chrome",
+        "--user-data-dir", "$BROWSER_PROFILE_DIR"
+      ]
+    }
+  }
+}
+JSON
+  fi
 
   # Schema changes are applied here, not at boot. Three cases:
   #   fresh database          -> migrate deploy creates everything
@@ -201,7 +226,8 @@ deploy)
 PATH=$SERVICE_PATH
 SOCKET_PATH=$SOCKET_PATH_PROD
 DATABASE_URL=$DATABASE_URL_PROD
-WORKSPACES_DIR=$WORKSPACES_DIR_PROD" \
+WORKSPACES_DIR=$WORKSPACES_DIR_PROD
+MCP_CONFIG=$MCP_CONFIG_PROD" \
     write_plist "$BACKEND_LABEL" "$PREFIX/backend" "$LOG_DIR/backend.log" \
     "$NODE_BIN" "$PREFIX/backend/dist/main.js"
   WRITE_PLIST_ENV="NODE_ENV=production
@@ -252,6 +278,7 @@ BACKEND_SOCKET=$SOCKET_PATH_PROD" \
   echo "  socket     $SOCKET_PATH_PROD"
   echo "  data       $DATA_DIR/unocomputer.db"
   echo "  workspaces $WORKSPACES_DIR_PROD"
+  echo "  mcp        $MCP_CONFIG_PROD"
   echo "  logs       $LOG_DIR/"
   ;;
 

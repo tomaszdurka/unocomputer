@@ -57,6 +57,16 @@ export class ClaudeService {
       args.push('--model', cliModel);
     }
 
+    // MCP servers (e.g. Playwright/Chrome for sites that need a real browser).
+    // MCP_CONFIG points at a JSON file; runs get the tools with no prompt
+    // because the session already runs with bypassPermissions.
+    const mcpConfig = process.env.MCP_CONFIG;
+    if (mcpConfig && fs.existsSync(mcpConfig)) {
+      args.push('--mcp-config', mcpConfig);
+    } else if (mcpConfig) {
+      this.logger.warn(`MCP_CONFIG set but missing: ${mcpConfig}`);
+    }
+
     // Add schema if provided
     if (outputSchema) {
       args.push('--json-schema', JSON.stringify(outputSchema));
