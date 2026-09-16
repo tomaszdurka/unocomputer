@@ -20,9 +20,15 @@ export class RunsService {
   }
   private readonly logger = new Logger(RunsService.name);
 
-  async runProvider(provider:string, options: RunOptions) {
+  // The model is "<provider>" or "<provider>:<model>" - e.g. "claude",
+  // "claude:sonnet", "claude:sonnet-4-5" - so a run can pin the CLI's model
+  // instead of inheriting its default.
+  async runProvider(model:string, options: RunOptions) {
+    const separator = model.indexOf(':');
+    const provider = separator === -1 ? model : model.slice(0, separator);
+    const cliModel = separator === -1 ? undefined : model.slice(separator + 1);
     if (provider === 'claude') {
-        return this.claudeService.run(options)
+        return this.claudeService.run({...options, cliModel})
     }
     if (provider === 'gemini') {
         return this.geminiService.run(options)

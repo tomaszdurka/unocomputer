@@ -16,6 +16,15 @@ type RunPromptDialogProps = {
   submitButtonText?: string;
 };
 
+const MODEL_SUGGESTIONS = [
+  'claude',
+  'claude:sonnet',
+  'claude:opus',
+  'claude:haiku',
+  'gemini',
+  'codex',
+];
+
 export default function RunPromptDialog({
   open,
   onOpenChange,
@@ -117,22 +126,24 @@ export default function RunPromptDialog({
               <label className="block text-sm font-medium mb-2">
                 Model
               </label>
-              <select
+              <input
+                list="run-model-options"
                 value={runModel}
                 onChange={(e) => setRunModel(e.target.value)}
+                placeholder="claude"
                 className="w-full rounded-md border border-gray-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:ring-neutral-500"
                 disabled={isSubmitting}
-              >
-                <option value="claude">
-                  claude {defaultModel === 'claude' ? (lastUsedModel ? '(last used)' : '(default)') : ''}
-                </option>
-                <option value="gemini">
-                  gemini {defaultModel === 'gemini' ? '(last used)' : ''}
-                </option>
-                <option value="codex">
-                  codex {defaultModel === 'codex' ? '(last used)' : ''}
-                </option>
-              </select>
+              />
+              <datalist id="run-model-options">
+                {MODEL_SUGGESTIONS.map((option) => (
+                  <option key={option} value={option} />
+                ))}
+              </datalist>
+              <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
+                The CLI to run, optionally pinning its model: claude, claude:sonnet,
+                claude:sonnet-4-5, gemini, codex.
+                {lastUsedModel ? ` Last used: ${lastUsedModel}.` : ''}
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
