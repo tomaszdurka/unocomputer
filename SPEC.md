@@ -59,9 +59,14 @@ Queue a new run (returns immediately)
   "workspaceId": "string?",      // Creates new session in workspace
   "sessionId": "string?",        // Continues existing session
   "model": "string?",            // e.g. "claude:sonnet", "gemini", "codex"
-  "tags": ["string"]             // Optional caller labels, max 10
+  "tags": ["string"],            // Optional caller labels, max 10
+  "env": { "KEY": "value" }      // Optional extra environment for the CLI process
 }
 ```
+
+**`env`** is layered over the service's own environment for that one CLI process -
+a project's API keys, or how the agent reaches the caller back. Strings only; it is
+never stored.
 
 **Response (201):**
 ```json
@@ -138,7 +143,9 @@ Create a workspace.
 - Without `directory`: a managed folder `{workspaceId}` is created under `WORKSPACES_DIR`.
 
 #### `GET /workspaces`
-List all workspaces
+List all workspaces, newest first. `?directory=<absolute path>` narrows it to the
+workspace bound to that folder - an array of one or none - so a caller can find
+"the workspace for this folder" before creating one.
 
 #### `GET /workspaces/:workspaceId`
 Get workspace details with its `sessions` (newest first, including ones without a run yet) and `runs`

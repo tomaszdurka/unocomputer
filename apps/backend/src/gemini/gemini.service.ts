@@ -52,7 +52,7 @@ export class GeminiService {
       // args.push('--response-schema', JSON.stringify(outputSchema));
     }
     // Strip environment variables to avoid nesting issues
-    const env = { ...process.env };
+    const env = { ...process.env, ...options.env };
     this.logger.log(`gemini ${args.join(' ')}`);
 
     const assistantMessages: string[] = []

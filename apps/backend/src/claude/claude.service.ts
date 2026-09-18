@@ -62,7 +62,7 @@ export class ClaudeService {
     }
 
     // Strip Claude environment variables to avoid nesting issues
-    const env = { ...process.env };
+    const env = { ...process.env, ...options.env };
     delete env.CLAUDE_CODE;
     delete env.CLAUDECODE;
 

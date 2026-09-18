@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Param, Patch, Body, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Patch, Body, Query, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import type { Workspace } from '../database/types';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
 import { WorkspaceDto } from '../database/dto';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
@@ -71,10 +71,30 @@ export class WorkspacesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all workspaces', description: 'Get a list of all Claude workspaces' })
+  @ApiOperation({
+    summary: 'List workspaces',
+    description:
+      'All workspaces, newest first. With `directory`, only the workspace bound to that ' +
+      'folder (an array of one or none), so a caller can find "the workspace for this ' +
+      'folder" before creating it.'
+  })
+  @ApiQuery({ name: 'directory', required: false, description: 'Absolute path of a folder' })
   @ApiResponse({ status: 200, description: 'List of workspaces', type: [WorkspaceDto] })
-  async listWorkspaces(): Promise<Workspace[]> {
-    return await this.db.findAllWorkspaces();
+  async listWorkspaces(@Query('directory') directory?: string): Promise<Workspace[]> {
+    if (directory === undefined) {
+      return await this.db.findAllWorkspaces();
+    }
+    // Resolved the way a create resolves it, so the same folder is found under any
+    // spelling. A folder that no longer exists cannot be canonicalised and has no
+    // workspace to find.
+    let workingDir: string;
+    try {
+      workingDir = fs.realpathSync.native(directory);
+    } catch {
+      return [];
+    }
+    const workspace = await this.db.findWorkspaceByWorkingDir({ workingDir });
+    return workspace ? [workspace] : [];
   }
 
   @Get(':workspaceId')
