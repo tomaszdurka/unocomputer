@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsObject, IsOptional, Matches } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRunDto {
@@ -53,4 +61,24 @@ export class CreateRunDto {
     message: 'model must be claude[:<model>], gemini, or codex',
   })
   model?: string;
+
+
+  @ApiProperty({
+    description:
+      'Optional labels for this run, e.g. ["job-hunt","matching"]. Tags are ' +
+      'for the caller, not the CLI: list runs by tag to ask "is one of my ' +
+      'runs of this kind still in flight?" Lowercase slugs.',
+    required: false,
+    type: [String],
+    example: ['job-hunt', 'matching'],
+  })
+  @IsArray()
+  @IsOptional()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @Matches(/^[a-z0-9][a-z0-9._-]{0,39}$/, {
+    each: true,
+    message: 'each tag must be a lowercase slug, max 40 chars',
+  })
+  tags?: string[];
 }

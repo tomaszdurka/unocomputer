@@ -84,7 +84,8 @@ export default function RunDetailView({ run }: { run: Run }) {
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
 
-  const events = run.events ?? [];
+  // Memoized: a fresh [] each render would re-run every useMemo below it.
+  const events = useMemo(() => run.events ?? [], [run.events]);
 
   const promptLines = (run.prompt || '').split('\n').length;
   const isLongPrompt = promptLines > 5;

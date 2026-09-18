@@ -47,6 +47,9 @@ model Run {
   runId         String     @id @map("run_id")
   prompt        String
   model         String?
+  // JSON array of labels the caller attaches, e.g. ["job-hunt","matching"].
+  // Callers query by tag to ask "is one of my runs still alive?".
+  tags          String     @default("[]")
   outputSchema  String?    @map("output_schema")
   status        String     @default("running")
   result        String?

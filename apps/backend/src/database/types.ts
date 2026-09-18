@@ -28,9 +28,11 @@ export type RunEvent = Omit<PrismaRunEvent, 'payload'> & {
   payload: JsonValue;
 };
 
-export type Run = Omit<PrismaRun, 'outputSchema' | 'result'> & {
+export type Run = Omit<PrismaRun, 'outputSchema' | 'result' | 'tags'> & {
   outputSchema?: JsonValue;
   result?: JsonValue;
+  /** Caller-supplied labels; stored as a JSON array, hydrated to strings. */
+  tags: string[];
   events?: RunEvent[];
   session?: Session;
   workspace?: Workspace;

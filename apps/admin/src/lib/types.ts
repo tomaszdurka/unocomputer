@@ -39,6 +39,8 @@ export type Run = {
   runId: string;
   prompt: string;
   model: string | null;
+  /** Caller-supplied labels, e.g. ["job-hunt","matching"]. */
+  tags?: string[];
   outputSchema?: unknown;
   status: RunStatus;
   result?: unknown;

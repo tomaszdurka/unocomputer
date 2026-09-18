@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, Body, Res, Headers, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Res, Headers, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CliEvent, JsonObject } from '../lib/json';
 import type { Run } from '../database/types';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
 import { RunDto } from '../database/dto';
+import { RUN_STATUSES } from '../database/run-status';
 import { CreateRunDto } from './dto/create-run.dto';
 import type { RunResult } from './dto/run-options';
 import { PersistenceService } from '../database/persistence.service';
@@ -61,6 +62,7 @@ export class RunsController {
       workspaceId: workspace.workspaceId,
       outputSchema: dto.schema,
       model: dto.model,
+      tags: dto.tags,
     });
 
     return { run, session, workspace };
@@ -177,10 +179,28 @@ export class RunsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all runs', description: 'Get a list of all Claude runs across all workspaces' })
+  @ApiOperation({
+    summary: 'List runs',
+    description:
+      'All runs across all workspaces, newest first. Narrow with `tag` ' +
+      '(repeatable - a run must carry EVERY tag given) and `status`, so a ' +
+      'caller can ask "do I already have a run of this kind in flight?"',
+  })
+  @ApiQuery({
+    name: 'tag',
+    required: false,
+    isArray: true,
+    type: String,
+    description: 'Repeatable. Runs must carry every tag given.',
+  })
+  @ApiQuery({ name: 'status', required: false, enum: RUN_STATUSES })
   @ApiResponse({ status: 200, description: 'List of runs', type: [RunDto] })
-  async listRuns(): Promise<Run[]> {
-    return await this.persistence.findAllRuns();
+  async listRuns(
+    @Query('tag') tag?: string | string[],
+    @Query('status') status?: string,
+  ): Promise<Run[]> {
+    const tags = tag === undefined ? [] : Array.isArray(tag) ? tag : [tag];
+    return await this.persistence.findAllRuns({ tags, status });
   }
 
   @Get(':runId')

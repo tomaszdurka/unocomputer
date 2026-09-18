@@ -129,6 +129,49 @@ describe('PersistenceService JSON boundary', () => {
     expect(run!.result).toBe('{"answer":4');
   });
 
+  it('stores tags as a JSON array and hydrates them back to strings', async () => {
+    await service.createRun({
+      prompt: 'p',
+      sessionId: 's1',
+      workspaceId: 'w1',
+      tags: ['job-hunt', 'matching'],
+    });
+    const call = prisma.calls.find((c) => c.op === 'create' && c.model === 'run');
+    expect(call!.args.data.tags).toBe('["job-hunt","matching"]');
+
+    prisma.returns.run = rawRun({ tags: '["job-hunt","matching"]' });
+    const run = await service.findRunWithEvents({ runId: 'r1' });
+    expect(run!.tags).toEqual(['job-hunt', 'matching']);
+  });
+
+  it('defaults tags to an empty array, never undefined', async () => {
+    await service.createRun({ prompt: 'p', sessionId: 's1', workspaceId: 'w1' });
+    const call = prisma.calls.find((c) => c.op === 'create' && c.model === 'run');
+    expect(call!.args.data.tags).toBe('[]');
+
+    prisma.returns.run = rawRun({ tags: 'not json' });
+    const run = await service.findRunWithEvents({ runId: 'r1' });
+    expect(run!.tags).toEqual([]);
+  });
+
+  it('asks for runs carrying EVERY tag, so "mine and in flight" is one query', async () => {
+    await service.findAllRuns({ tags: ['job-hunt', 'matching'], status: RunStatus.RUNNING });
+    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    expect(call!.args.where).toEqual({
+      status: RunStatus.RUNNING,
+      AND: [
+        { tags: { contains: '"job-hunt"' } },
+        { tags: { contains: '"matching"' } },
+      ],
+    });
+  });
+
+  it('does not filter when no tag or status is given', async () => {
+    await service.findAllRuns();
+    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    expect(call!.args.where).toEqual({});
+  });
+
   it('returns an empty array, not undefined, when there are no runs', async () => {
     prisma.returns.runs = [];
     await expect(service.findAllRuns()).resolves.toEqual([]);

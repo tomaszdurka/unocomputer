@@ -88,6 +88,12 @@ export class RunDto {
   })
   outputSchema?: Record<string, unknown>;
 
+  @ApiProperty({
+    type: [String],
+    description: 'Caller-supplied labels, e.g. ["job-hunt","matching"]',
+  })
+  tags!: string[];
+
   @ApiProperty({ description: 'Run status', enum: RUN_STATUSES })
   status!: string;
 
