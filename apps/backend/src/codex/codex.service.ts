@@ -6,17 +6,8 @@ import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonS
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 import {execSync} from "node:child_process";
 import {readFileSync} from "fs";
-import {Session} from '../database/types';
-
-// Sessions only carry their workspace when the query included it. Every caller here
-// loads one that did, so an absent workspace is a wiring bug, not a runtime condition.
-function requireWorkspace(session: Session) {
-  if (!session.workspace) {
-    throw new Error(`Session ${session.sessionId} was loaded without its workspace`);
-  }
-  return session.workspace;
-}
-
+import {Session, Workspace} from '../database/types';
+import {providerSessionDir} from '../lib/session-storage';
 
 @Injectable()
 export class CodexService {
@@ -27,12 +18,12 @@ export class CodexService {
         const {runId, prompt, outputSchema} = run;
 
         // Ensure run directory exist
-        const runPath = path.join(this.getSessionDirectory(session), runId);
+        const runPath = path.join(this.getSessionDirectory(session, workspace), runId);
         fs.mkdirSync(runPath, {recursive: true});
 
 
         // Check for existing codex session
-        const codexSessionId = this.retrieveCodexSessionId(session);
+        const codexSessionId = this.retrieveCodexSessionId(session, workspace);
         const sessionMarker = codexSessionId ? '' : `[SESSION-ID=${session.sessionId}]\n`
         const enhancedPrompt = `${sessionMarker}${prompt}`
 
@@ -46,9 +37,11 @@ export class CodexService {
             )
         }
 
+        // Codex 0.149 dropped --full-auto. Unattended like the other CLIs (claude
+        // runs with bypassPermissions, gemini with --yolo): no prompts, no sandbox.
         args.push(
             enhancedPrompt,
-            '--full-auto',
+            '--dangerously-bypass-approvals-and-sandbox',
             '--json',
             '--skip-git-repo-check',
             '--output-last-message',
@@ -83,8 +76,8 @@ export class CodexService {
         }
     }
 
-    retrieveCodexSessionId(session: Session) {
-        const sessionPath = this.getSessionDirectory(session);
+    retrieveCodexSessionId(session: Session, workspace: Workspace) {
+        const sessionPath = this.getSessionDirectory(session, workspace);
 
         // Find codex session id, but searching for special file
         const codexSessionPath = path.join(sessionPath, 'session-id');
@@ -106,9 +99,8 @@ export class CodexService {
         return null;
     }
 
-    getSessionDirectory(session: Session) {
-        const sessionPath = path.join(requireWorkspace(session).workingDir, '.codex', session.sessionId);
-        fs.mkdirSync(sessionPath, {recursive: true});
-        return sessionPath;
+    // Uno's own state about the session, kept out of the workspace folder.
+    getSessionDirectory(session: Session, workspace: Workspace) {
+        return providerSessionDir('codex', session, workspace);
     }
 }

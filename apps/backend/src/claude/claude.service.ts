@@ -1,6 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common';
 import { CliEvent } from '../lib/json';
-import path from "node:path";
 import * as fs from "node:fs";
 import { Run } from '../database/types';
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
@@ -19,16 +18,6 @@ export class ClaudeService {
     // Check if this is the first run in the session (no completed runs yet)
     const sessionRuns = session.runs ?? [];
     const isFirstRun = sessionRuns.filter((r: Run) => r.runId !== runId).length === 0;
-
-    // Create initial CLAUDE.md file if needed
-    const claudeMdPath = path.join(workspace.workingDir, 'CLAUDE.md');
-    if (!fs.existsSync(claudeMdPath)) {
-      const initialContent = `Please refer to AGENTS.md for project guidelines`;
-      fs.writeFileSync(claudeMdPath, initialContent, {
-        encoding: 'utf-8',
-        flag: 'w'
-      });
-    }
 
     const permissionMode = 'bypassPermissions';
     const args = [];

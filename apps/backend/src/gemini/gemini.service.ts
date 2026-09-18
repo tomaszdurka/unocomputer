@@ -2,21 +2,12 @@ import {Injectable, Logger} from '@nestjs/common';
 import { CliEvent } from '../lib/json';
 import path from "node:path";
 import * as fs from "node:fs";
-import { Session } from '../database/types';
+import { Session, Workspace } from '../database/types';
 import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
 import {RunOptions, RunResult} from "../runs/dto/run-options";
 import {readFileSync} from "fs";
 import {execSync} from "node:child_process";
-
-// Sessions only carry their workspace when the query included it. Every caller here
-// loads one that did, so an absent workspace is a wiring bug, not a runtime condition.
-function requireWorkspace(session: Session) {
-  if (!session.workspace) {
-    throw new Error(`Session ${session.sessionId} was loaded without its workspace`);
-  }
-  return session.workspace;
-}
-
+import {providerSessionDir} from '../lib/session-storage';
 
 @Injectable()
 export class GeminiService {
@@ -27,11 +18,11 @@ export class GeminiService {
     const {runId, prompt, outputSchema} = run;
 
     // Ensure run directory exist
-    const runPath = path.join(this.getSessionDirectory(session), runId);
+    const runPath = path.join(this.getSessionDirectory(session, workspace), runId);
     fs.mkdirSync(runPath, {recursive: true});
 
     // Check for existing codex session
-    const geminiSessionId = this.retrieveGeminiSessionId(session);
+    const geminiSessionId = this.retrieveGeminiSessionId(session, workspace);
     const sessionMarker = geminiSessionId ? '' : `[SESSION-ID=${session.sessionId}]\n`
     let enhancedPrompt = `${sessionMarker}${prompt}`
 
@@ -83,7 +74,7 @@ export class GeminiService {
         options.onOutput?.(event);
       },
     });
-    this.extractGeminiSessionId(session);
+    this.extractGeminiSessionId(session, workspace);
 
     const result = assistantMessages[assistantMessages.length - 1];
     let structuredResult;
@@ -105,8 +96,8 @@ export class GeminiService {
     };
   }
 
-  retrieveGeminiSessionId(session: Session) {
-    const sessionPath = this.getSessionDirectory(session);
+  retrieveGeminiSessionId(session: Session, workspace: Workspace) {
+    const sessionPath = this.getSessionDirectory(session, workspace);
 
     // Find gemini session id, but searching for special file
     const geminiSessionPath = path.join(sessionPath, 'session-id');
@@ -116,9 +107,8 @@ export class GeminiService {
     return null;
   }
 
-  extractGeminiSessionId(session: Session) {
-
-    const sessionPath = this.getSessionDirectory(session);
+  extractGeminiSessionId(session: Session, workspace: Workspace) {
+    const sessionPath = this.getSessionDirectory(session, workspace);
     const geminiSessionPath = path.join(sessionPath, 'session-id');
 
     // Find gemini session id, but searching for special session-marker
@@ -135,10 +125,9 @@ export class GeminiService {
     return null;
   }
 
-  getSessionDirectory(session: Session) {
-    const sessionPath = path.join(requireWorkspace(session).workingDir, '.gemini', session.sessionId);
-    fs.mkdirSync(sessionPath, {recursive: true});
-    return sessionPath;
+  // Uno's own state about the session, kept out of the workspace folder.
+  getSessionDirectory(session: Session, workspace: Workspace) {
+    return providerSessionDir('gemini', session, workspace);
   }
 
 }

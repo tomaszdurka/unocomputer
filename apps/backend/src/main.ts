@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as path from 'path';
+import { sessionsDir } from './lib/session-storage';
 
 // The backend has no TCP port. It listens on a unix domain socket (SOCKET_PATH) and the
 // admin proxies /api/* to it, so the browser only ever talks to the admin's single port.
@@ -51,6 +52,10 @@ async function bootstrap() {
   // schema on every start, which silently rewrote column types out from under it.
   const dbFile = (process.env.DATABASE_URL ?? '').replace(/^file:/, '');
   if (dbFile) fs.mkdirSync(path.dirname(dbFile), { recursive: true });
+
+  // Uno's per-session CLI state (codex/gemini resume ids) lives here, never in a
+  // workspace folder, which may be a real project of the caller's.
+  fs.mkdirSync(sessionsDir(), { recursive: true });
 
   const socketPath = process.env.SOCKET_PATH ?? defaultSocketPath;
   fs.mkdirSync(path.dirname(socketPath), { recursive: true });
