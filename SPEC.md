@@ -15,11 +15,11 @@
 ### 2. Key Features
 - Execute Claude CLI commands programmatically
 - Session management for conversation continuity
-- Automatic workspace creation for each run
+- Workspaces: a managed folder created per run, or bound to any existing folder of the caller's (`POST /workspaces { directory }`)
 - Two response modes: buffered JSON and streaming JSONL (based on `Accept` header)
 - Structured schema output validation
-- Workspace isolation with unique IDs
-- SQLite persistence with MikroORM
+- One folder = one workspace; nothing is written into a caller's folder beyond what the agent itself does
+- SQLite persistence with Prisma
 - Next.js 16 dashboard UI for monitoring runs, sessions, and workspaces
 - Lifecycle management with automatic cleanup of interrupted runs
 
@@ -33,12 +33,16 @@ Sessions enable conversation continuity across multiple runs. Each session belon
 - **Subsequent runs**: Uses `--resume {sessionId}` to continue the conversation
 - Sessions are tied to workspaces for project isolation
 - Multiple sessions can exist within a single workspace (useful for different features/tasks)
+- A session can carry a `name` - a label for people and scripts, not an address: runs
+  still take a `sessionId`. Names are not unique; a caller that needs "the session
+  named X" keeps that mapping itself.
 
 ### Session Lifecycle
-1. Create a new session by providing `workspaceId` in run request
-2. Continue existing session by providing `sessionId` in run request
-3. Sessions persist indefinitely and can be resumed at any time
-4. Each run within a session builds on the conversation history
+1. Create a session explicitly with `POST /sessions { workspaceId, name? }`, or implicitly by providing `workspaceId` in a run request
+2. Continue an existing session by providing `sessionId` in the run request
+3. Rename it any time with `PATCH /sessions/:sessionId { name }` (`null` clears the label)
+4. Sessions persist indefinitely and can be resumed at any time
+5. Each run within a session builds on the conversation history
 
 ## API Specification
 
@@ -95,17 +99,52 @@ run. Runs created without tags come back with `tags: []`.
 #### `GET /runs/:runId`
 Get run details with events and results
 
+#### `POST /sessions`
+Create a session in a workspace ahead of its first run.
+
+```json
+{
+  "workspaceId": "string",       // Required
+  "name": "string?"              // Optional label, max 200 chars
+}
+```
+
+201 with the session; 404 when the workspace does not exist.
+
 #### `GET /sessions`
 List all sessions with workspace info
 
 #### `GET /sessions/:sessionId`
 Get session details with all runs
 
+#### `PATCH /sessions/:sessionId`
+Rename a session: `{ "name": "string | null" }`. 404 when it does not exist.
+
+#### `POST /workspaces`
+Create a workspace.
+
+```json
+{
+  "directory": "string?",        // Absolute path of an EXISTING folder to bind to
+  "name": "string?",
+  "agentsMd": "string?"          // Written to <workspace>/AGENTS.md when given
+}
+```
+
+- With `directory`: the workspace runs in that folder. The path must be absolute and
+  an existing directory (400 otherwise); it is stored canonical (symlinks resolved).
+  One folder = one workspace: 409 when a workspace already exists for it, naming
+  that workspace.
+- Without `directory`: a managed folder `{workspaceId}` is created under `WORKSPACES_DIR`.
+
 #### `GET /workspaces`
 List all workspaces
 
 #### `GET /workspaces/:workspaceId`
-Get workspace details with sessions
+Get workspace details with its `sessions` (newest first, including ones without a run yet) and `runs`
+
+#### `PATCH /workspaces/:workspaceId`
+Rename a workspace: `{ "name": "string | null" }`.
 
 ### Legacy Endpoint: `POST /runs/claude`
 
@@ -124,7 +163,7 @@ Get workspace details with sessions
 ```
 
 **Notes:**
-- No `workingDirectory` field — each run automatically creates a workspace under `./workspaces/{uuid}/`
+- No directory field on a run: the directory is the workspace's. Bind a workspace to a folder with `POST /workspaces`, then run with its `workspaceId`; with neither id, the run gets a managed workspace under `WORKSPACES_DIR`
 - No `stream` field — streaming is determined by the `Accept` header
 - Providing `workspaceId` allows reusing an existing workspace for continuity across runs
 
@@ -209,9 +248,11 @@ Each line is a JSON object representing an event:
 
 The workspaces directory location can be configured via environment variable:
 
-**Environment Variable:**
-- `WORKSPACES_DIR` - Custom path for workspaces directory (optional)
+**Environment Variables:**
+- `WORKSPACES_DIR` - Where managed workspaces are created (optional)
 - Default: `./workspaces` (relative to project root)
+- `SESSIONS_DIR` - Where Uno keeps its own per-session CLI state (codex/gemini resume ids)
+- Default: `<repo-root>/data/sessions`, beside the database. Never a workspace folder.
 
 **Example:**
 ```bash
@@ -225,43 +266,43 @@ WORKSPACES_DIR=/var/data/claude-workspaces pm2 start "npm run start:dev" --name 
 
 ### Strategy
 
-Workspaces can be created new or reused:
+A workspace is a directory the CLIs run in. It is either managed or bound:
 
-**New Workspace:**
-- Automatically created if no `workspaceId` is provided
-- Directory: `./workspaces/{workspaceId}/` where `workspaceId` is a UUID
-- An initial `CLAUDE.md` file is created to reference other tracking files
-- The `workspaceId` and `runId` are returned in the response
+**Managed workspace:**
+- Created by `POST /workspaces` without `directory`, or by a run request with no `workspaceId`
+- Directory: `{WORKSPACES_DIR}/{workspaceId}/` where `workspaceId` is a UUID
+- Optional `AGENTS.md` written from the `agentsMd` parameter
 
-**Reusing a Workspace:**
-- Provide `workspaceId` in the request body
-- The workspace directory must exist (returns 400 if not)
-- Allows continuity across multiple runs
-- Optional `AGENTS.md` can be created via workspace creation API
+**Bound workspace (caller's folder):**
+- Created by `POST /workspaces { directory }` for an existing folder - a project checkout, a git worktree
+- Nothing is created there by Uno: no `CLAUDE.md`, no `.codex`/`.gemini` state. The agent reads the folder's own instruction files
+- One folder = one workspace (unique on the canonical path)
+
+**Reusing a workspace:**
+- Provide `workspaceId` in the run request (a new session), or `sessionId` (continue one)
 
 ### Directory Structure
 ```
-local-model-api/
-├── workspaces/
-│   ├── abc-123-def-456/       # Workspace for run 1
-│   │   ├── CLAUDE.md          # Reference file pointing to AGENTS.md
-│   │   ├── AGENTS.md          # Optional project guidelines
-│   │   └── ...                # Files created during execution
-│   └── xyz-789-uvw-012/       # Workspace for run 2
-│       ├── CLAUDE.md
-│       ├── AGENTS.md
-│       └── ...
+<WORKSPACES_DIR>/
+├── abc-123-def-456/           # Managed workspace
+│   ├── AGENTS.md              # Optional project guidelines
+│   └── ...                    # Files created during execution
+└── xyz-789-uvw-012/
+
+<SESSIONS_DIR>/                # Uno's own state, per provider and session
+├── codex/<sessionId>/         # session-id (the CLI's id to resume), per-run output
+└── gemini/<sessionId>/
+
+/Users/me/projects/app         # A bound workspace: the caller's folder, untouched
 ```
 
-**Note:** The `workspaces/` directory is gitignored.
+**Note:** `data/` (database, socket, sessions) and `workspaces/` are gitignored.
+
+Session state used to live at `<workspace>/.codex/<sessionId>` and
+`<workspace>/.gemini/<sessionId>`. A folder still there is moved into
+`SESSIONS_DIR` the first time that session is used again.
 
 ### Workspace State Files
-
-Each workspace contains several tracking files:
-
-**CLAUDE.md**:
-- Auto-generated file that points to AGENTS.md
-- Created on first run in workspace
 
 **AGENTS.md**:
 - Optional project guidelines and context
@@ -330,7 +371,6 @@ src/
 **Methods:**
 
 **`run(options): Promise<unknown>`**
-- Creates initial `CLAUDE.md` reference file in workspace if needed
 - Builds Claude CLI arguments with `--session-id` (first run) or `--resume` (subsequent runs)
 - Sets permission mode (`bypassPermissions`)
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment
@@ -388,17 +428,18 @@ UnoComputer includes a Next.js 16 dashboard built with Turbopack for fast develo
   - Navigate to related sessions and workspaces
 
 - **Sessions View** - Track conversation continuity
-  - List all sessions across workspaces
+  - List all sessions across workspaces, by name where one is set
   - View runs within each session
+  - Rename a session inline
   - Continue sessions with new prompts
   - Navigate to parent workspace
 
-- **Workspaces View** - Manage isolated environments
+- **Workspaces View** - Manage the folders agents work in
   - List all workspaces with metadata
-  - Create workspaces with optional AGENTS.md
+  - Create a workspace: bound to an existing folder, or managed
   - Edit workspace names
   - View workspace files (AGENTS.md)
-  - Create new runs in workspace
+  - Create a named session in a workspace, then run prompts in it
 
 ### Navigation
 - Seamless cross-navigation between runs, sessions, and workspaces
@@ -496,7 +537,7 @@ The `RunsService.executeJsonStream()` method implements robust line buffering:
 The application uses NestJS `ConfigModule` to handle environment variables:
 - Loads from `.env.local` file (gitignored) if present
 - Falls back to system environment variables
-- Used for `WORKSPACES_DIR` configuration
+- Used for `WORKSPACES_DIR` and `SESSIONS_DIR` configuration
 
 ### Module Dependencies
 

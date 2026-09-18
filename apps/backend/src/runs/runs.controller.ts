@@ -9,6 +9,8 @@ import { CreateRunDto } from './dto/create-run.dto';
 import type { RunResult } from './dto/run-options';
 import { PersistenceService } from '../database/persistence.service';
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'node:fs';
+import { defaultWorkspaceDir } from '../workspaces/workspace-directory';
 import {RunsService} from "./runs.service";
 
 @ApiTags('runs')
@@ -48,9 +50,8 @@ export class RunsController {
     } else {
       // Create new workspace and session
       const workspaceId = uuidv4();
-      const workingDir = process.env.WORKSPACES_DIR
-        ? `${process.env.WORKSPACES_DIR}/${workspaceId}`
-        : `${process.cwd()}/workspaces/${workspaceId}`;
+      const workingDir = defaultWorkspaceDir(workspaceId);
+      fs.mkdirSync(workingDir, { recursive: true });
       workspace = await this.persistence.createWorkspace({ workspaceId, workingDir });
       session = await this.persistence.createSession({ workspaceId: workspace.workspaceId });
     }

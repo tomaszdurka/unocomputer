@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Param, Patch, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Patch, Body, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import type { Workspace } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
 import { WorkspaceDto } from '../database/dto';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
+import { WorkspaceDirectoryTakenError } from '../database/errors';
+import { defaultWorkspaceDir, resolveCallerDirectory } from './workspace-directory';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,20 +18,48 @@ export class WorkspacesController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create workspace', description: 'Create a new workspace with optional AGENTS.md' })
+  @ApiOperation({
+    summary: 'Create workspace',
+    description:
+      'Create a workspace, either bound to an existing folder (`directory`) or as a ' +
+      'managed folder under WORKSPACES_DIR. One folder = one workspace. Optional AGENTS.md.'
+  })
   @ApiBody({ type: CreateWorkspaceDto })
   @ApiResponse({ status: 201, description: 'Workspace created successfully', type: WorkspaceDto })
+  @ApiResponse({ status: 400, description: 'directory is relative, missing or not a directory' })
+  @ApiResponse({ status: 409, description: 'A workspace already exists for that directory' })
   async createWorkspace(@Body() createDto: CreateWorkspaceDto): Promise<Workspace> {
     const workspaceId = uuidv4();
-    const workingDir = process.env.WORKSPACES_DIR
-      ? `${process.env.WORKSPACES_DIR}/${workspaceId}`
-      : `${process.cwd()}/workspaces/${workspaceId}`;
+    let workingDir: string;
 
-    const workspace = await this.db.createWorkspace({
-      workspaceId,
-      workingDir,
-      name: createDto.name,
-    });
+    if (createDto.directory) {
+      // Binding to the caller's folder: it must exist, and nothing is created there.
+      workingDir = resolveCallerDirectory(createDto.directory);
+      const existing = await this.db.findWorkspaceByWorkingDir({ workingDir });
+      if (existing) {
+        throw new ConflictException(
+          `${workingDir} already belongs to workspace ${existing.workspaceId}`
+        );
+      }
+    } else {
+      workingDir = defaultWorkspaceDir(workspaceId);
+      fs.mkdirSync(workingDir, { recursive: true });
+    }
+
+    let workspace: Workspace;
+    try {
+      workspace = await this.db.createWorkspace({
+        workspaceId,
+        workingDir,
+        name: createDto.name,
+      });
+    } catch (error) {
+      // Two creates for the same folder racing past the check above.
+      if (error instanceof WorkspaceDirectoryTakenError) {
+        throw new ConflictException(error.message);
+      }
+      throw error;
+    }
 
     // Write AGENTS.md if provided
     if (createDto.agentsMd) {

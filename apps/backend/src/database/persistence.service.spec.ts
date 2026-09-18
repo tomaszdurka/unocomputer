@@ -1,5 +1,7 @@
+import { Prisma } from '@prisma/client';
 import { PersistenceService } from './persistence.service';
 import { RunStatus } from './run-status';
+import { WorkspaceDirectoryTakenError } from './errors';
 import type { PrismaService } from '../prisma/prisma.service';
 
 // The JSON boundary is the part of the Prisma migration that could silently regress.
@@ -35,6 +37,7 @@ function fakePrisma() {
     },
     session: {
       create: record('session', 'create', {}),
+      update: record('session', 'update', {}),
       findUnique: record('session', 'findUnique', () => prisma.returns.session),
       findMany: record('session', 'findMany', () => prisma.returns.sessions ?? []),
     },
@@ -189,5 +192,60 @@ describe('PersistenceService JSON boundary', () => {
     await expect(
       service.storeEvent({ runId: 'r1', sequence: 1, event: { type: 'text' } }),
     ).resolves.toBeUndefined();
+  });
+
+  it('records a workspace over a directory without touching the filesystem', async () => {
+    await service.createWorkspace({ workspaceId: 'w1', workingDir: '/nowhere/at/all' });
+    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'create');
+    expect(call!.args.data).toEqual({ workspaceId: 'w1', workingDir: '/nowhere/at/all', name: null });
+  });
+
+  it('reports a directory that already has a workspace as its own error', async () => {
+    prisma.workspace.create = () =>
+      Promise.reject(
+        new Prisma.PrismaClientKnownRequestError('dup', { code: 'P2002', clientVersion: 'x' }),
+      ) as never;
+
+    await expect(
+      service.createWorkspace({ workspaceId: 'w2', workingDir: '/taken' }),
+    ).rejects.toBeInstanceOf(WorkspaceDirectoryTakenError);
+  });
+
+  it('lets any other create failure through untouched', async () => {
+    prisma.workspace.create = () => Promise.reject(new Error('db gone')) as never;
+    await expect(
+      service.createWorkspace({ workspaceId: 'w2', workingDir: '/x' }),
+    ).rejects.toThrow('db gone');
+  });
+
+  it('looks a workspace up by its directory', async () => {
+    await service.findWorkspaceByWorkingDir({ workingDir: '/repo' });
+    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'findUnique');
+    expect(call!.args.where).toEqual({ workingDir: '/repo' });
+  });
+
+  it('stores a session label, null when there is none', async () => {
+    await service.createSession({ workspaceId: 'w1', name: 'first' });
+    await service.createSession({ workspaceId: 'w1' });
+    const [named, bare] = prisma.calls.filter((c) => c.model === 'session' && c.op === 'create');
+    expect(named.args.data.name).toBe('first');
+    expect(bare.args.data.name).toBeNull();
+  });
+
+  it('renames a session and answers null when it does not exist', async () => {
+    await service.updateSession({ sessionId: 's1', name: 'renamed' });
+    const call = prisma.calls.find((c) => c.model === 'session' && c.op === 'update');
+    expect(call!.args).toEqual({ where: { sessionId: 's1' }, data: { name: 'renamed' } });
+
+    prisma.session.update = () => Promise.reject(new Error('no row')) as never;
+    await expect(service.updateSession({ sessionId: 'gone', name: null })).resolves.toBeNull();
+  });
+
+  it('loads a workspace with its sessions, so one without a run still shows', async () => {
+    prisma.returns.workspace = { workspaceId: 'w1', runs: [], sessions: [{ sessionId: 's1' }] };
+    const workspace = await service.findWorkspaceWithRuns({ id: 'w1' });
+    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'findUnique');
+    expect(call!.args.include.sessions).toEqual({ orderBy: { createdAt: 'desc' } });
+    expect(workspace!.sessions).toEqual([{ sessionId: 's1' }]);
   });
 });

@@ -24,11 +24,17 @@ export class WorkspaceDto {
 
   @ApiPropertyOptional({ type: () => [RunDto], description: 'Runs in this workspace' })
   runs?: RunDto[];
+
+  @ApiPropertyOptional({ type: () => [SessionDto], description: 'Sessions in this workspace' })
+  sessions?: SessionDto[];
 }
 
 export class SessionDto {
   @ApiProperty({ description: 'Session unique identifier' })
   sessionId!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'Session label' })
+  name!: string | null;
 
   @ApiProperty({ description: 'Session creation timestamp' })
   createdAt!: Date;
