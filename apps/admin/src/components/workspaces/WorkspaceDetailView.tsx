@@ -1,14 +1,16 @@
 'use client';
 
-import type { Run, Workspace, WorkspaceSessionSummary } from '#/lib/types';
+import type { Workspace, WorkspaceSessionSummary } from '#/lib/types';
 import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Dialog, DialogContent } from '@app/ui/dialog';
-import { updateWorkspace, getWorkspaceFile, queueRun } from '#/lib/api';
-import { Edit2, Check, X, FileText, Play, Copy } from 'lucide-react';
-import RunPromptDialog from '#/components/runs/RunPromptDialog';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Input, Separator } from '@app/ui';
+import { updateWorkspace, getWorkspaceFile } from '#/lib/api';
+import { FileText, Plus, Copy } from 'lucide-react';
+import InlineNameEditor from '#/components/InlineNameEditor';
+import NewSessionDialog from '#/components/sessions/NewSessionDialog';
+import { summariseSessions } from './sessionSummaries';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Separator } from '@app/ui';
 import type { Column } from '@app/ui';
 
 const sessionStatusClass = (status: string) =>
@@ -20,10 +22,18 @@ const sessionStatusClass = (status: string) =>
 
 const sessionColumns: Column<WorkspaceSessionSummary>[] = [
   {
-    key: 'sessionId',
-    header: 'Session ID',
-    className: 'truncate',
-    cell: (session) => <span className="font-mono font-medium">{session.sessionId}</span>
+    key: 'session',
+    header: 'Session',
+    cell: (session) => (
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {session.name || <span className="italic font-normal text-gray-500 dark:text-neutral-400">Unnamed</span>}
+        </p>
+        <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
+          {session.sessionId}
+        </p>
+      </div>
+    )
   },
   {
     key: 'status',
@@ -55,82 +65,16 @@ const sessionColumns: Column<WorkspaceSessionSummary>[] = [
 ];
 
 export default function WorkspaceDetailView({ workspace }: { workspace: Workspace }) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(workspace.name || '');
-  const [currentName, setCurrentName] = useState(workspace.name || null);
-  const [isSaving, setIsSaving] = useState(false);
   const [showFilesDialog, setShowFilesDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState('AGENTS.md');
   const [fileContent, setFileContent] = useState<string>('');
   const [loadingFile, setLoadingFile] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [showRunDialog, setShowRunDialog] = useState(false);
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
-  // Memoized: a fresh [] each render would re-run every useMemo below it.
-  const runs = useMemo(() => workspace.runs ?? [], [workspace.runs]);
   const availableFiles = ['AGENTS.md'];
 
-  // Extract unique sessions from runs with status
-  const sessions = useMemo(() => {
-    const sessionMap = new Map();
-    runs.forEach((run) => {
-      if (run.session) {
-        const sid = run.session.sessionId;
-        if (!sessionMap.has(sid)) {
-          sessionMap.set(sid, {
-            sessionId: sid,
-            lastUsed: run.startedAt,
-            runCount: 0,
-            runs: []
-          });
-        }
-        sessionMap.get(sid).runCount++;
-        sessionMap.get(sid).runs.push(run);
-        const lastUsed = sessionMap.get(sid).lastUsed;
-        if (Date.parse(run.startedAt) > Date.parse(lastUsed)) {
-          sessionMap.get(sid).lastUsed = run.startedAt;
-        }
-      }
-    });
-
-    // Compute status for each session
-    return Array.from(sessionMap.values()).map(session => {
-      const sessionRuns = session.runs;
-      let status = 'success';
-
-      if (sessionRuns.some((r: Run) => r.status === 'running')) {
-        status = 'running';
-      } else if (sessionRuns.some((r: Run) => r.status === 'failure')) {
-        status = 'failure';
-      } else if (sessionRuns.some((r: Run) => r.status === 'stopped')) {
-        status = 'stopped';
-      }
-
-      return { ...session, status };
-    }).sort(
-      (a, b) => (Date.parse(a.lastUsed ?? '') || 0) - (Date.parse(b.lastUsed ?? '') || 0)
-    );
-  }, [runs]);
-
-  const handleSaveName = async () => {
-    setIsSaving(true);
-    try {
-      await updateWorkspace(workspace.workspaceId, {
-        name: editedName.trim() || null
-      });
-      setCurrentName(editedName.trim() || null);
-      setIsEditingName(false);
-    } catch (err: unknown) {
-      console.error('Failed to update workspace name:', err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditedName(currentName || '');
-    setIsEditingName(false);
-  };
+  const sessions = useMemo(() => summariseSessions(workspace), [workspace]);
 
   const handleOpenFiles = async () => {
     setShowFilesDialog(true);
@@ -152,15 +96,6 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
     }
   };
 
-  const handleRunSubmit = async ({ prompt, schema, model }: { prompt: string; schema?: unknown; model?: string }) => {
-    return await queueRun({
-      prompt,
-      schema,
-      workspaceId: workspace.workspaceId, // Always create new session
-      model,
-    });
-  };
-
   const handleCopyPath = async () => {
     try {
       await navigator.clipboard.writeText(workspace.workingDir);
@@ -175,55 +110,14 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
     <div className="space-y-5">
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            {isEditingName ? (
-              <>
-                <Input
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  placeholder="Workspace name"
-                  className="flex-1 text-lg font-semibold"
-                  autoFocus
-                  disabled={isSaving}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') handleCancelEdit();
-                  }}
-                />
-                <button
-                  onClick={handleSaveName}
-                  disabled={isSaving}
-                  className="p-2 text-green-700 hover:bg-green-50 rounded-lg transition"
-                  title="Save"
-                >
-                  <Check className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={isSaving}
-                  className="p-2 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                  title="Cancel"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </>
-            ) : (
-              <>
-                <h2 className="flex-1 text-2xl font-bold tracking-tight">
-                  {currentName || (
-                    <span className="text-gray-500 dark:text-neutral-400 italic">Unnamed Workspace</span>
-                  )}
-                </h2>
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="p-2 text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition"
-                  title="Edit name"
-                >
-                  <Edit2 className="h-5 w-5" />
-                </button>
-              </>
-            )}
-          </div>
+          <InlineNameEditor
+            value={workspace.name}
+            emptyLabel="Unnamed Workspace"
+            placeholder="Workspace name"
+            onSave={async (name) => {
+              await updateWorkspace(workspace.workspaceId, { name });
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -292,8 +186,8 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Workspace Info</CardTitle>
-            <Button onClick={() => setShowRunDialog(true)}>
-              <Play className="h-4 w-4 mr-2" />
+            <Button onClick={() => setShowSessionDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               New Session
             </Button>
           </div>
@@ -309,9 +203,9 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
               <span className="relative inline-block ml-2">
                 <button
                   onClick={handleCopyPath}
-                  className="text-gray-500 dark:text-neutral-400 hover:text-gray-600 dark:hover:text-neutral-400 inline-flex items-center gap-1.5 group/path transition"
+                  className="text-gray-500 dark:text-neutral-400 hover:text-gray-600 dark:hover:text-neutral-400 inline-flex items-center gap-1.5 group/path transition text-left"
                 >
-                  <span>{workspace.workingDir}</span>
+                  <span className="break-all">{workspace.workingDir}</span>
                   <Copy className="h-3 w-3 text-gray-400 dark:text-neutral-500 opacity-0 group-hover/path:opacity-100 transition" />
                 </button>
                 {copiedPath && (
@@ -344,13 +238,10 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
         </CardContent>
       </Card>
 
-      <RunPromptDialog
-        open={showRunDialog}
-        onOpenChange={setShowRunDialog}
-        onSubmit={handleRunSubmit}
-        dialogTitle="New Run (Creates New Session)"
-        runs={runs}
-        submitButtonText="Run Prompt"
+      <NewSessionDialog
+        open={showSessionDialog}
+        onOpenChange={setShowSessionDialog}
+        workspaceId={workspace.workspaceId}
       />
 
       <DataTable

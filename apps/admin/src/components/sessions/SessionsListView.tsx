@@ -14,11 +14,17 @@ function formatDate(dateString: string | null | undefined) {
 
 const columns: Column<Session>[] = [
   {
-    key: 'sessionId',
-    header: 'Session ID',
-    className: 'truncate',
+    key: 'session',
+    header: 'Session',
     cell: (session) => (
-      <span className="truncate font-mono font-medium">{session.sessionId}</span>
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {session.name || <span className="italic font-normal text-gray-500 dark:text-neutral-400">Unnamed</span>}
+        </p>
+        <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
+          {session.sessionId}
+        </p>
+      </div>
     )
   },
   {

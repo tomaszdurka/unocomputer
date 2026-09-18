@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import type { Run, Session } from '#/lib/types';
 import { useState } from 'react';
-import { queueRun } from '#/lib/api';
+import { queueRun, updateSession } from '#/lib/api';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
+import InlineNameEditor from '#/components/InlineNameEditor';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable } from '@app/ui';
 import type { Column } from '@app/ui';
 
@@ -84,15 +85,30 @@ export default function SessionDetailView({ session }: { session: Session }) {
     });
   };
 
+  const firstRun = runs.length === 0;
+
   return (
     <div className="space-y-5">
+      <Card>
+        <CardContent className="pt-6">
+          <InlineNameEditor
+            value={session.name}
+            emptyLabel="Unnamed Session"
+            placeholder="Session name"
+            onSave={async (name) => {
+              await updateSession(session.sessionId, { name });
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Session Info</CardTitle>
             <Button onClick={() => setShowRunDialog(true)}>
               <Play className="h-4 w-4 mr-2" />
-              Continue Session
+              {firstRun ? 'New Run' : 'Continue Session'}
             </Button>
           </div>
         </CardHeader>
@@ -132,7 +148,7 @@ export default function SessionDetailView({ session }: { session: Session }) {
         open={showRunDialog}
         onOpenChange={setShowRunDialog}
         onSubmit={handleRunSubmit}
-        dialogTitle="Continue Session"
+        dialogTitle={firstRun ? 'First run in this session' : 'Continue Session'}
         runs={runs}
         submitButtonText="Run Prompt"
       />
