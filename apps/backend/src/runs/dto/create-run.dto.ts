@@ -81,4 +81,17 @@ export class CreateRunDto {
     message: 'each tag must be a lowercase slug, max 40 chars',
   })
   tags?: string[];
+
+  @ApiProperty({
+    description:
+      'Extra environment for the CLI process, layered over the service\'s own - ' +
+      'a project\'s keys, or where the caller can be reached. Values are strings.',
+    required: false,
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { APOLLO_API_KEY: '...' },
+  })
+  @IsObject()
+  @IsOptional()
+  env?: Record<string, string>;
 }

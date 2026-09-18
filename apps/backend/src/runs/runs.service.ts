@@ -69,6 +69,7 @@ export class RunsService {
       run: {...run, prompt},
       session,
       workspace,
+      env: options.env,
       onOutput: (event: CliEvent) => {
         sequence++;
         options.onOutput?.(event);

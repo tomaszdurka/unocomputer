@@ -57,7 +57,7 @@ export class CodexService {
         }
 
         // Strip environment variables to avoid nesting issues
-        const env = {...process.env};
+        const env = {...process.env, ...options.env};
 
         await executeCommandWithJsonStreamOutput({
             command: 'codex',

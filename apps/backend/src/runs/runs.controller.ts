@@ -171,6 +171,7 @@ export class RunsController {
       run,
       session,
       workspace,
+      env: dto.env,
       onOutput: isStreaming ? writeEvent : undefined,
     });
 
