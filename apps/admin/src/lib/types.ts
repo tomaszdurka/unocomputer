@@ -19,6 +19,8 @@ export type Workspace = {
 
 export type Session = {
   sessionId: string;
+  /** Optional label. Runs still address a session by id. */
+  name: string | null;
   createdAt: string;
   updatedAt: string;
   workspaceId: string;
@@ -64,10 +66,12 @@ export type Prompt = {
   updatedAt: string;
 };
 
-/** A session as the workspace detail view receives it, with its run count flattened. */
+/** A session as the workspace detail view shows it, with its runs folded in. */
 export type WorkspaceSessionSummary = {
   sessionId: string;
-  status: RunStatus | string;
+  name: string | null;
+  /** `idle` for a session created ahead of its first run. */
+  status: RunStatus | 'idle';
   runCount: number;
   lastUsed: string;
 };

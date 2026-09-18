@@ -13,6 +13,39 @@ type RequestOptions = {
   body?: string;
 };
 
+/**
+ * A non-2xx answer. `message` is what the backend said when it said anything -
+ * Nest's validation errors and our 400/409s carry a `message` a person can act
+ * on - and the bare status and path otherwise.
+ */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+    detail?: string,
+  ) {
+    super(detail ?? `API ${status}: ${path}`);
+    this.name = 'ApiError';
+  }
+}
+
+/** The human-readable part of an error body, if it has one. */
+function detailOf(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const message = (body as { message?: unknown }).message;
+  if (typeof message === 'string' && message) return message;
+  if (Array.isArray(message) && message.length) return message.join('; ');
+  return undefined;
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 const isServer = typeof window === 'undefined';
 
 async function serverRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -39,7 +72,7 @@ async function serverRequest<T>(path: string, options: RequestOptions = {}): Pro
           const text = Buffer.concat(chunks).toString('utf8');
           const status = res.statusCode ?? 502;
           if (status < 200 || status >= 300) {
-            reject(new Error(`API ${status}: ${path}`));
+            reject(new ApiError(status, path, detailOf(parseJson(text))));
             return;
           }
           try {
@@ -58,7 +91,10 @@ async function serverRequest<T>(path: string, options: RequestOptions = {}): Pro
 
 async function browserRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const res = await fetch(`/api${path}`, { cache: 'no-store', ...options });
-  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(res.status, path, detailOf(body));
+  }
   return res.json();
 }
 
@@ -80,6 +116,14 @@ export async function listWorkspaces(): Promise<Workspace[]> {
 
 export async function getWorkspace(workspaceId: string): Promise<Workspace> {
   return request<Workspace>(`/workspaces/${workspaceId}`);
+}
+
+export async function createWorkspace(data: { directory?: string; name?: string; agentsMd?: string }): Promise<Workspace> {
+  return request('/workspaces', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function updateWorkspace(workspaceId: string, data: { name?: string | null }): Promise<Workspace> {
@@ -108,6 +152,22 @@ export async function listSessions(): Promise<Session[]> {
 
 export async function getSession(sessionId: string): Promise<Session> {
   return request<Session>(`/sessions/${sessionId}`);
+}
+
+export async function createSession(data: { workspaceId: string; name?: string }): Promise<Session> {
+  return request('/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateSession(sessionId: string, data: { name?: string | null }): Promise<Session> {
+  return request(`/sessions/${sessionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function listPrompts(): Promise<Prompt[]> {

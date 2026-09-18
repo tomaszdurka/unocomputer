@@ -158,8 +158,11 @@ export default function RunDetailView({ run }: { run: Run }) {
             <span className="grid-label">Session:</span>{' '}
             <span className="ml-2">
               {run.session?.sessionId ? (
-                <Link href={`/sessions/${run.session.sessionId}`} className="text-mint hover:underline font-mono text-xs">
-                  {run.session.sessionId}
+                <Link
+                  href={`/sessions/${run.session.sessionId}`}
+                  className={`text-mint hover:underline ${run.session.name ? '' : 'font-mono text-xs'}`}
+                >
+                  {run.session.name || run.session.sessionId}
                 </Link>
               ) : (
                 '-'
