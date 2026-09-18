@@ -3,9 +3,9 @@ import type { CliEvent, JsonValue } from '../lib/json';
 import type { Run } from './types';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'node:fs';
 import { PrismaService } from '../prisma/prisma.service';
 import { RunStatus } from './run-status';
+import { WorkspaceDirectoryTakenError } from './errors';
 
 // SQLite has no JSON type, so run.outputSchema, run.result and runEvent.payload are
 // TEXT columns holding JSON. The API has always exposed them as objects - the admin
@@ -121,10 +121,31 @@ export class PersistenceService {
   /**
    * Create a session
    */
-  async createSession(payload: { workspaceId: string }) {
+  async createSession(payload: { workspaceId: string; name?: string }) {
     return this.prisma.session.create({
-      data: { sessionId: uuidv4(), workspaceId: payload.workspaceId },
+      data: {
+        sessionId: uuidv4(),
+        workspaceId: payload.workspaceId,
+        name: payload.name ?? null,
+      },
     });
+  }
+
+  /**
+   * Update a session's label. Null when there is no such session.
+   */
+  async updateSession(payload: { sessionId: string; name?: string | null }) {
+    const data: Prisma.SessionUpdateInput = {};
+    if (payload.name !== undefined) data.name = payload.name;
+
+    try {
+      return await this.prisma.session.update({
+        where: { sessionId: payload.sessionId },
+        data,
+      });
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -173,20 +194,40 @@ export class PersistenceService {
   }
 
   /**
-   * Create a workspace
+   * Record a workspace over a directory the caller has already provisioned or
+   * verified. The directory is unique: a second workspace on the same folder
+   * raises WorkspaceDirectoryTakenError.
    */
   async createWorkspace(payload: {
     workspaceId: string;
     workingDir: string;
     name?: string;
   }) {
-    fs.mkdirSync(payload.workingDir, { recursive: true });
-    return this.prisma.workspace.create({
-      data: {
-        workspaceId: payload.workspaceId,
-        workingDir: payload.workingDir,
-        name: payload.name ?? null,
-      },
+    try {
+      return await this.prisma.workspace.create({
+        data: {
+          workspaceId: payload.workspaceId,
+          workingDir: payload.workingDir,
+          name: payload.name ?? null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new WorkspaceDirectoryTakenError(payload.workingDir);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * The workspace bound to a directory, if any
+   */
+  async findWorkspaceByWorkingDir(payload: { workingDir: string }) {
+    return this.prisma.workspace.findUnique({
+      where: { workingDir: payload.workingDir },
     });
   }
 
@@ -236,7 +277,11 @@ export class PersistenceService {
   async findWorkspaceWithRuns(payload: { id: string }) {
     const workspace = await this.prisma.workspace.findUnique({
       where: { workspaceId: payload.id },
-      include: { runs: { include: { session: true } } },
+      include: {
+        runs: { include: { session: true } },
+        // Sessions of their own, so one created ahead of its first run shows up.
+        sessions: { orderBy: { createdAt: 'desc' } },
+      },
     });
     return workspace ? { ...workspace, runs: hydrateRuns(workspace.runs) } : null;
   }

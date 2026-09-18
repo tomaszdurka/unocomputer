@@ -7,9 +7,9 @@
 ### Core Concept
 
 - **HTTP API → Claude CLI**: Transform HTTP requests into `claude` command executions
-- **Workspace Isolation**: Each run operates in an isolated directory under `workspaces/`
+- **Workspaces**: Each run operates in a workspace directory - a managed folder under `workspaces/`, or any existing folder the caller bound a workspace to (`POST /workspaces { directory }`). One folder = one workspace
 - **Dual Response Modes**: Buffered JSON or streaming JSONL based on `Accept` header
-- **State Persistence**: Workspaces can be reused across runs for continuity
+- **State Persistence**: Workspaces can be reused across runs for continuity; Uno's own per-session CLI state lives in `SESSIONS_DIR`, never in the workspace folder
 
 ## Architecture
 
@@ -36,27 +36,31 @@ src/
 
 ### Service Responsibilities
 
-**RunsService**
-- `ensureWorkspace(existingWorkspaceId?)`: Creates new workspace or validates existing one
-- `executeJsonStream()`: Generic utility for running commands that output JSONL
-- Uses `WORKSPACES_DIR` env var (default: `./workspaces`)
+**RunsController / RunsService**
+- `prepareRun(dto)` (controller): resolves `sessionId` / `workspaceId` / neither into a session and workspace; a run with neither gets a managed workspace from `defaultWorkspaceDir()` (`src/workspaces/workspace-directory.ts`)
+- `runProvider()` (service): splits `<provider>:<model>` and dispatches to claude / gemini / codex
+- `src/lib/executeCommandWithJsonStreamOutput.ts`: generic utility for running commands that output JSONL
 
 **ClaudeService**
-- `run(options)`: Execute Claude CLI
-- Creates initial `CLAUDE.md` in workspace (reference file pointing to AGENTS.md)
+- `run(options)`: Execute Claude CLI in the workspace folder; writes nothing there itself
 - First run uses: `claude --session-id <id> -p <prompt> --output-format stream-json --verbose --permission-mode bypassPermissions`
 - Subsequent runs use: `claude --resume <session-id> -p <prompt> ...`
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment to avoid nesting
 
 **WorkspacesController**
-- `POST /workspaces`: Create workspace with optional `agentsMd` content
+- `POST /workspaces`: Create workspace - bound to an existing folder with `directory` (400 if relative/missing/not a directory, 409 if that folder already has a workspace) or managed under `WORKSPACES_DIR`; optional `agentsMd` content
 - `GET /workspaces`: List all workspaces
-- `GET /workspaces/:id`: Get workspace details
+- `GET /workspaces/:id`: Get workspace details with `sessions` and `runs`
 - `PATCH /workspaces/:id`: Update workspace properties
+
+**SessionsController**
+- `POST /sessions`: Create a session in a workspace, optionally named (404 unknown workspace)
+- `GET /sessions`, `GET /sessions/:id`
+- `PATCH /sessions/:id`: Rename (`name: null` clears). Runs still address sessions by id; a name is a label
 
 **Workspace Files**
 - `AGENTS.md`: Optional project guidelines (created via POST /workspaces with `agentsMd` param)
-- `CLAUDE.md`: Auto-generated reference file pointing to AGENTS.md
+- Nothing else: a bound workspace is somebody's real folder. Codex/gemini resume ids live in `SESSIONS_DIR/<provider>/<sessionId>` (`src/lib/session-storage.ts`), which also moves a legacy `<workspace>/.codex|.gemini/<sessionId>` folder on first use
 
 ### Request Flow
 
@@ -107,13 +111,17 @@ src/
 
 - `src/runs/runs.service.ts`: Run execution and provider routing
 - `src/claude/claude.service.ts`: Claude CLI command construction
-- `src/workspaces/workspaces.controller.ts`: Workspace creation with agentsMd
+- `src/workspaces/workspaces.controller.ts`: Workspace creation (bound folder or managed) with agentsMd
+- `src/workspaces/workspace-directory.ts`: managed dir layout and caller-directory validation
+- `src/lib/session-storage.ts`: where per-session CLI state lives
 - `SPEC.md`: Complete API specification
 - `vercel.json`: Deployment config (routes to `server.js`)
 
 ### Environment Variables
 
-- `WORKSPACES_DIR`: Custom workspace directory (default: `./workspaces`)
+- `WORKSPACES_DIR`: Where managed workspaces are created (default: `./workspaces`)
+- `SESSIONS_DIR`: Uno's per-session CLI state (default: `<repo-root>/data/sessions`)
+- `MCP_CONFIG`: MCP server config passed to claude as `--mcp-config`
 - Load from `.env.local` (gitignored) via ConfigModule
 
 ### Testing Locally
@@ -138,7 +146,7 @@ curl -X POST http://unocomputer.localhost/api/runs \
 
 - **Local deployment**: `pnpm deploy:local` - launchd agents, Next standalone,
   backend on a unix socket, admin behind Caddy at http://unocomputer.localhost
-- **Production**: Add auth, rate limiting, input validation
+- **Production**: Add auth, rate limiting, input validation. `directory` on `POST /workspaces` lets any API caller run a bypass-permissions agent in any folder the service user can read - one more reason the API is never exposed unauthenticated
 - **Workspaces**: Consider cleanup strategy for old workspaces
 - **Scaling**: Each request spawns a `claude` process - resource intensive
 
@@ -168,7 +176,7 @@ curl -X POST http://unocomputer.localhost/api/runs \
 - **Line Buffering**: Critical for JSONL parsing - buffers incomplete lines until `\n` received
 - **Process Stdin**: Closed immediately after spawn to prevent hanging
 - **Client Disconnects**: Tracked via `res.on('close')` to stop writing events
-- **Workspace Persistence**: Workspaces are never auto-deleted, manual cleanup required
+- **Workspace Persistence**: Workspaces are never auto-deleted, manual cleanup required. A bound workspace's folder belongs to the caller and is never touched
 
 ## Project Context
 

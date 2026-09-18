@@ -19,7 +19,9 @@ datasource db {
 
 model Workspace {
   workspaceId String    @id @map("workspace_id")
-  workingDir  String    @map("working_dir")
+  // One folder = one workspace. A caller can bind a workspace to any existing
+  // directory; two on the same folder would share files and CLI session state.
+  workingDir  String    @unique @map("working_dir")
   name        String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -32,6 +34,8 @@ model Workspace {
 
 model Session {
   sessionId   String    @id @map("session_id")
+  // Optional label for people and scripts. Runs still address a session by id.
+  name        String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   workspaceId String    @map("workspace_workspace_id")
