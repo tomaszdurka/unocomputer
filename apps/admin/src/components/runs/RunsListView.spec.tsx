@@ -30,6 +30,12 @@ describe('RunsListView', () => {
     expect(screen.getAllByRole('row')).toHaveLength(2); // header + 1
   });
 
+  it('shows the caller tags under the prompt', () => {
+    render(<RunsListView runs={[run({ tags: ['job-hunt', 'matching'] })]} />);
+    expect(screen.getByText('job-hunt')).toBeDefined();
+    expect(screen.getByText('matching')).toBeDefined();
+  });
+
   it('labels the caption with the run count', () => {
     render(<RunsListView runs={[run(), run({ runId: 'r2' })]} />);
     expect(screen.getByText('Recent Runs (2)')).toBeDefined();

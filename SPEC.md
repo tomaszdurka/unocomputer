@@ -53,7 +53,9 @@ Queue a new run (returns immediately)
   "prompt": "string",           // Required
   "schema": "object?",           // Optional JSON schema
   "workspaceId": "string?",      // Creates new session in workspace
-  "sessionId": "string?"         // Continues existing session
+  "sessionId": "string?",        // Continues existing session
+  "model": "string?",            // e.g. "claude:sonnet", "gemini", "codex"
+  "tags": ["string"]             // Optional caller labels, max 10
 }
 ```
 
@@ -73,7 +75,22 @@ Execute run and wait for completion (supports streaming)
 Same request body as `/runs/queue`, supports both buffered and streaming modes via `Accept` header.
 
 #### `GET /runs`
-List all runs
+List all runs, newest first.
+
+**Query parameters:**
+- `tag` - repeatable; a run must carry EVERY tag given (AND)
+- `status` - `running` | `success` | `failure` | `stopped`
+
+```bash
+# "Do I already have a matching run in flight?"
+curl "http://unocomputer.localhost/api/runs?tag=job-hunt&tag=matching&status=running"
+```
+
+**Tags** are labels the CALLER attaches to a run - the CLI never sees them. They
+exist so an application can ask about its own runs without tracking run ids:
+tag a run `["job-hunt","matching"]` on creation, then query by tag before
+starting another one. Lowercase slugs (`[a-z0-9][a-z0-9._-]*`), at most 10 per
+run. Runs created without tags come back with `tags: []`.
 
 #### `GET /runs/:runId`
 Get run details with events and results

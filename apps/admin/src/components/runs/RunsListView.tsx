@@ -41,6 +41,21 @@ const columns: Column<Run>[] = [
         <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
           {run.runId}
         </p>
+        {run.tags?.length ? (
+          // What this run is FOR, in the caller's own words - the one thing the
+          // prompt text alone never tells you at a glance.
+          <p className="mt-1 flex flex-wrap gap-1">
+            {run.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className="bg-gray-50 dark:bg-neutral-800/60 text-gray-600 dark:text-neutral-400 border-gray-200 dark:border-neutral-800"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </p>
+        ) : null}
       </div>
     )
   },

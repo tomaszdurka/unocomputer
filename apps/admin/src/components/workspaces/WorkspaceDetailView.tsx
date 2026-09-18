@@ -66,7 +66,8 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
   const [fileError, setFileError] = useState<string | null>(null);
   const [showRunDialog, setShowRunDialog] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
-  const runs = workspace.runs ?? [];
+  // Memoized: a fresh [] each render would re-run every useMemo below it.
+  const runs = useMemo(() => workspace.runs ?? [], [workspace.runs]);
   const availableFiles = ['AGENTS.md'];
 
   // Extract unique sessions from runs with status

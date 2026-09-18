@@ -32,11 +32,20 @@ type RawEvent = { payload: string };
 type RawRun = {
   outputSchema?: string | null;
   result?: string | null;
+  tags?: string | null;
   events?: RawEvent[];
 };
 
 function hydrateEvent<T extends RawEvent>(event: T) {
   return { ...event, payload: parse(event.payload) };
+}
+
+/** Tags are a JSON array of strings; anything else on the row reads as none. */
+function parseTags(value: string | null): string[] {
+  const parsed = parse(value);
+  return Array.isArray(parsed)
+    ? parsed.filter((tag): tag is string => typeof tag === 'string')
+    : [];
 }
 
 function hydrateRun<T extends RawRun>(run: T): Run;
@@ -47,6 +56,7 @@ function hydrateRun<T extends RawRun>(run: T | null): Run | null {
     ...run,
     outputSchema: parse(run.outputSchema ?? null),
     result: parse(run.result ?? null),
+    tags: parseTags(run.tags ?? null),
     ...(run.events ? { events: run.events.map(hydrateEvent) } : {}),
   } as unknown as Run;
 }
@@ -189,6 +199,7 @@ export class PersistenceService {
     workspaceId: string;
     outputSchema?: object;
     model?: string;
+    tags?: string[];
   }) {
     const run = await this.prisma.run.create({
       data: {
@@ -198,6 +209,7 @@ export class PersistenceService {
         workspaceId: payload.workspaceId,
         outputSchema: serialise(payload.outputSchema),
         model: payload.model ?? null,
+        tags: JSON.stringify(payload.tags ?? []),
         status: RunStatus.RUNNING,
       },
     });
@@ -230,10 +242,23 @@ export class PersistenceService {
   }
 
   /**
-   * Get all runs
+   * Get all runs, optionally narrowed to the caller's own.
+   *
+   * `tags` is an AND: a run must carry every tag asked for. Tags live in a TEXT
+   * column, so the filter is a substring match on the serialised array - safe
+   * because tags are validated as lowercase slugs, which cannot contain the
+   * quotes that delimit them.
    */
-  async findAllRuns() {
+  async findAllRuns(filter?: { tags?: string[]; status?: string }) {
+    const where: Prisma.RunWhereInput = {};
+    if (filter?.status) where.status = filter.status;
+    if (filter?.tags?.length) {
+      where.AND = filter.tags.map((tag) => ({
+        tags: { contains: `"${tag}"` },
+      }));
+    }
     const runs = await this.prisma.run.findMany({
+      where,
       orderBy: { startedAt: 'desc' },
       include: { workspace: true },
     });
