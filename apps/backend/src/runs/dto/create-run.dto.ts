@@ -87,7 +87,7 @@ export class CreateRunDto {
       'Extra environment for the CLI process, layered over the service\'s own - ' +
       'a project\'s keys, or where the caller can be reached. Values are strings.',
     required: false,
-    type: 'object',
+    type: Object,
     additionalProperties: { type: 'string' },
     example: { APOLLO_API_KEY: '...' },
   })
