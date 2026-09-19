@@ -19,7 +19,13 @@ describe('api client (browser transport)', () => {
   it('prefixes every path with /api so it goes through the proxy', async () => {
     fetchMock.mockReturnValue(ok([]));
     await listRuns();
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/runs');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/runs?page=1');
+  });
+
+  it('asks for the page it was given', async () => {
+    fetchMock.mockReturnValue(ok([]));
+    await listRuns(4);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/runs?page=4');
   });
 
   it('never serves a cached response', async () => {

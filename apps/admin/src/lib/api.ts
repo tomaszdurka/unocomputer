@@ -5,7 +5,7 @@
 // Server:  talk to the socket directly. Routing a server component's fetch back through
 //          our own port just to reach the proxy would be a pointless extra hop.
 
-import type { Prompt, Run, Session, Workspace } from './types';
+import type { Paginated, Prompt, Run, Session, Workspace } from './types';
 
 type RequestOptions = {
   method?: string;
@@ -102,16 +102,16 @@ function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   return isServer ? serverRequest<T>(path, options) : browserRequest<T>(path, options);
 }
 
-export async function listRuns(): Promise<Run[]> {
-  return request<Run[]>('/runs');
+export async function listRuns(page = 1): Promise<Paginated<Run>> {
+  return request<Paginated<Run>>(`/runs?page=${page}`);
 }
 
 export async function getRun(runId: string): Promise<Run> {
   return request<Run>(`/runs/${runId}`);
 }
 
-export async function listWorkspaces(): Promise<Workspace[]> {
-  return request<Workspace[]>('/workspaces');
+export async function listWorkspaces(page = 1): Promise<Paginated<Workspace>> {
+  return request<Paginated<Workspace>>(`/workspaces?page=${page}`);
 }
 
 export async function getWorkspace(workspaceId: string): Promise<Workspace> {
@@ -146,8 +146,8 @@ export async function queueRun(data: { prompt: string; schema?: unknown; model?:
   });
 }
 
-export async function listSessions(): Promise<Session[]> {
-  return request<Session[]>('/sessions');
+export async function listSessions(page = 1): Promise<Paginated<Session>> {
+  return request<Paginated<Session>>(`/sessions?page=${page}`);
 }
 
 export async function getSession(sessionId: string): Promise<Session> {

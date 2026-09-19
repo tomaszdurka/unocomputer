@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Patch, Param, Body, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, NotFoundException } from '@nestjs/common';
 import type { Session } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
-import { SessionDto } from '../database/dto';
+import { PaginatedSessionsDto, SessionDto } from '../database/dto';
+import { type Page, PaginationQueryDto } from '../common/dto';
 import { CreateSessionDto, UpdateSessionDto } from './dto';
 
 @ApiTags('sessions')
@@ -32,9 +33,9 @@ export class SessionsController {
 
   @Get()
   @ApiOperation({ summary: 'List all sessions', description: 'Get a list of all sessions across all workspaces' })
-  @ApiResponse({ status: 200, description: 'List of sessions', type: [SessionDto] })
-  async listSessions(): Promise<Session[]> {
-    return await this.db.findAllSessions();
+  @ApiResponse({ status: 200, description: 'A page of sessions', type: PaginatedSessionsDto })
+  async listSessions(@Query() pagination: PaginationQueryDto): Promise<Page<Session>> {
+    return await this.db.findAllSessions(pagination);
   }
 
   @Get(':sessionId')

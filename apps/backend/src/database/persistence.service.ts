@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { CliEvent, JsonValue } from '../lib/json';
-import type { Run } from './types';
+import type { Run, Session, Workspace } from './types';
+import { type Page, type PaginationQueryDto, toSkipTake } from '../common/dto';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
@@ -158,12 +159,21 @@ export class PersistenceService {
   /**
    * Get all sessions
    */
-  async findAllSessions() {
-    const sessions = await this.prisma.session.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { workspace: true, runs: true },
-    });
-    return sessions.map((session) => ({ ...session, runs: hydrateRuns(session.runs) }));
+  async findAllSessions(pagination: PaginationQueryDto): Promise<Page<Session>> {
+    const [sessions, total] = await Promise.all([
+      this.prisma.session.findMany({
+        ...toSkipTake(pagination),
+        orderBy: { createdAt: 'desc' },
+        include: { workspace: true, runs: true },
+      }),
+      this.prisma.session.count(),
+    ]);
+    return {
+      items: sessions.map((session) => ({ ...session, runs: hydrateRuns(session.runs) })),
+      total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    };
   }
 
   /**
@@ -260,8 +270,15 @@ export class PersistenceService {
   /**
    * Get all workspaces
    */
-  async findAllWorkspaces() {
-    return this.prisma.workspace.findMany({ orderBy: { createdAt: 'desc' } });
+  async findAllWorkspaces(pagination: PaginationQueryDto): Promise<Page<Workspace>> {
+    const [items, total] = await Promise.all([
+      this.prisma.workspace.findMany({
+        ...toSkipTake(pagination),
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.workspace.count(),
+    ]);
+    return { items, total, page: pagination.page, pageSize: pagination.pageSize };
   }
 
   /**
@@ -294,7 +311,10 @@ export class PersistenceService {
    * because tags are validated as lowercase slugs, which cannot contain the
    * quotes that delimit them.
    */
-  async findAllRuns(filter?: { tags?: string[]; status?: string }) {
+  async findAllRuns(
+    pagination: PaginationQueryDto,
+    filter?: { tags?: string[]; status?: string },
+  ): Promise<Page<Run>> {
     const where: Prisma.RunWhereInput = {};
     if (filter?.status) where.status = filter.status;
     if (filter?.tags?.length) {
@@ -302,12 +322,23 @@ export class PersistenceService {
         tags: { contains: `"${tag}"` },
       }));
     }
-    const runs = await this.prisma.run.findMany({
-      where,
-      orderBy: { startedAt: 'desc' },
-      include: { workspace: true },
-    });
-    return hydrateRuns(runs);
+    // `total` counts the filtered set, not the table, so "page 2 of my running
+    // job-hunt runs" means what it says.
+    const [runs, total] = await Promise.all([
+      this.prisma.run.findMany({
+        where,
+        ...toSkipTake(pagination),
+        orderBy: { startedAt: 'desc' },
+        include: { workspace: true },
+      }),
+      this.prisma.run.count({ where }),
+    ]);
+    return {
+      items: hydrateRuns(runs),
+      total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    };
   }
 
   /**

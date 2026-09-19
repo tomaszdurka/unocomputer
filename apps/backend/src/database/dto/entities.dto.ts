@@ -158,3 +158,33 @@ export class PromptDto {
   @ApiProperty()
   updatedAt!: Date;
 }
+
+// Paginated envelopes. Every list endpoint returns one of these rather than a bare
+// array, so a caller always knows whether it is holding the whole set - `items.length`
+// alone cannot tell you that once a page cap exists.
+
+class PageMetaDto {
+  @ApiProperty({ description: 'Rows matching the query across all pages' })
+  total!: number;
+
+  @ApiProperty({ description: '1-based page number of this response' })
+  page!: number;
+
+  @ApiProperty({ description: 'Rows per page requested' })
+  pageSize!: number;
+}
+
+export class PaginatedRunsDto extends PageMetaDto {
+  @ApiProperty({ type: () => [RunDto] })
+  items!: RunDto[];
+}
+
+export class PaginatedSessionsDto extends PageMetaDto {
+  @ApiProperty({ type: () => [SessionDto] })
+  items!: SessionDto[];
+}
+
+export class PaginatedWorkspacesDto extends PageMetaDto {
+  @ApiProperty({ type: () => [WorkspaceDto] })
+  items!: WorkspaceDto[];
+}

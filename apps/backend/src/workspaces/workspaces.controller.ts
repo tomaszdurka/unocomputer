@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Param, Patch, Body, Query, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import type { Workspace } from '../database/types';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import {ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
-import { WorkspaceDto } from '../database/dto';
-import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
+import { PaginatedWorkspacesDto, WorkspaceDto } from '../database/dto';
+import { type Page } from '../common/dto';
+import { CreateWorkspaceDto, ListWorkspacesQueryDto, UpdateWorkspaceDto } from './dto';
 import { WorkspaceDirectoryTakenError } from '../database/errors';
 import { defaultWorkspaceDir, resolveCallerDirectory } from './workspace-directory';
 import { v4 as uuidv4 } from 'uuid';
@@ -74,16 +75,24 @@ export class WorkspacesController {
   @ApiOperation({
     summary: 'List workspaces',
     description:
-      'All workspaces, newest first. With `directory`, only the workspace bound to that ' +
-      'folder (an array of one or none), so a caller can find "the workspace for this ' +
-      'folder" before creating it.'
+      'All workspaces, newest first, a page at a time. With `directory`, only the ' +
+      'workspace bound to that folder (`items` holds one or none), so a caller can find ' +
+      '"the workspace for this folder" before creating it.'
   })
-  @ApiQuery({ name: 'directory', required: false, description: 'Absolute path of a folder' })
-  @ApiResponse({ status: 200, description: 'List of workspaces', type: [WorkspaceDto] })
-  async listWorkspaces(@Query('directory') directory?: string): Promise<Workspace[]> {
+  @ApiResponse({ status: 200, description: 'A page of workspaces', type: PaginatedWorkspacesDto })
+  async listWorkspaces(@Query() query: ListWorkspacesQueryDto): Promise<Page<Workspace>> {
+    const { directory } = query;
     if (directory === undefined) {
-      return await this.db.findAllWorkspaces();
+      return await this.db.findAllWorkspaces(query);
     }
+    // A directory lookup is a single answer, but it comes back in the same envelope as
+    // the list so callers never have to branch on the response shape.
+    const found = (items: Workspace[]): Page<Workspace> => ({
+      items,
+      total: items.length,
+      page: 1,
+      pageSize: query.pageSize,
+    });
     // Resolved the way a create resolves it, so the same folder is found under any
     // spelling. A folder that no longer exists cannot be canonicalised and has no
     // workspace to find.
@@ -91,10 +100,10 @@ export class WorkspacesController {
     try {
       workingDir = fs.realpathSync.native(directory);
     } catch {
-      return [];
+      return found([]);
     }
     const workspace = await this.db.findWorkspaceByWorkingDir({ workingDir });
-    return workspace ? [workspace] : [];
+    return found(workspace ? [workspace] : []);
   }
 
   @Get(':workspaceId')

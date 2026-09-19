@@ -1,5 +1,6 @@
 import { listWorkspaces } from '#/lib/api';
-import type { Workspace } from '#/lib/types';
+import { pageFromSearchParams } from '#/lib/pagination';
+import { PAGE_SIZE, type Paginated, type Workspace } from '#/lib/types';
 import WorkspacesListView from '#/components/workspaces/WorkspacesListView';
 import NewWorkspaceButton from '#/components/workspaces/NewWorkspaceButton';
 
@@ -7,12 +8,17 @@ import NewWorkspaceButton from '#/components/workspaces/NewWorkspaceButton';
 // call the way it could from fetch(), so opt out of prerendering explicitly.
 export const dynamic = 'force-dynamic';
 
-export default async function WorkspacesPage() {
-  let workspaces: Workspace[] = [];
+export default async function WorkspacesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page } = await searchParams;
+  let workspaces: Paginated<Workspace> = { items: [], total: 0, page: 1, pageSize: PAGE_SIZE };
   let error = null;
 
   try {
-    workspaces = await listWorkspaces();
+    workspaces = await listWorkspaces(pageFromSearchParams(page));
   } catch (err: unknown) {
     error = (err instanceof Error ? err.message : String(err));
   }

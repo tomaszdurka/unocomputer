@@ -84,15 +84,27 @@ Execute run and wait for completion (supports streaming)
 Same request body as `/runs/queue`, supports both buffered and streaming modes via `Accept` header.
 
 #### `GET /runs`
-List all runs, newest first.
+List runs, newest first, **a page at a time**.
 
 **Query parameters:**
+- `page` - 1-based, default `1`
+- `pageSize` - default `100`, maximum `100`
 - `tag` - repeatable; a run must carry EVERY tag given (AND)
 - `status` - `running` | `success` | `failure` | `stopped`
+
+**Response** - a page, not a bare array. `total` counts everything matching the
+filter, so paging through a filtered query works:
+
+```json
+{ "items": [ ... ], "total": 444, "page": 1, "pageSize": 100 }
+```
 
 ```bash
 # "Do I already have a matching run in flight?"
 curl "http://unocomputer.localhost/api/runs?tag=job-hunt&tag=matching&status=running"
+
+# ...and "is there one?" is now a look at .total, not the array length
+curl -s "http://unocomputer.localhost/api/runs?tag=job-hunt&status=running" | jq '.total'
 ```
 
 **Tags** are labels the CALLER attaches to a run - the CLI never sees them. They
@@ -117,7 +129,9 @@ Create a session in a workspace ahead of its first run.
 201 with the session; 404 when the workspace does not exist.
 
 #### `GET /sessions`
-List all sessions with workspace info
+List sessions with workspace info, newest first, a page at a time. Takes `page` and
+`pageSize` and returns the same `{ items, total, page, pageSize }` envelope as
+`GET /runs`.
 
 #### `GET /sessions/:sessionId`
 Get session details with all runs
@@ -143,9 +157,13 @@ Create a workspace.
 - Without `directory`: a managed folder `{workspaceId}` is created under `WORKSPACES_DIR`.
 
 #### `GET /workspaces`
-List all workspaces, newest first. `?directory=<absolute path>` narrows it to the
-workspace bound to that folder - an array of one or none - so a caller can find
-"the workspace for this folder" before creating one.
+List workspaces, newest first, a page at a time. Takes `page` and `pageSize` and
+returns the same `{ items, total, page, pageSize }` envelope as `GET /runs`.
+
+`?directory=<absolute path>` narrows it to the workspace bound to that folder -
+`items` holds one or none - so a caller can find "the workspace for this folder"
+before creating one. It comes back in the same envelope as the list, so a caller
+never has to branch on the response shape.
 
 #### `GET /workspaces/:workspaceId`
 Get workspace details with its `sessions` (newest first, including ones without a run yet) and `runs`

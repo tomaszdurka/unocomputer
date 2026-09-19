@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import type { Session } from '#/lib/types';
+import type { Session, Paginated } from '#/lib/types';
 import { DataTable } from '@app/ui';
+import PagePagination from '#/components/PagePagination';
 import type { Column } from '@app/ui';
 import { Badge } from '@app/ui';
 
@@ -68,18 +69,19 @@ const columns: Column<Session>[] = [
   }
 ];
 
-export default function SessionsListView({ sessions }: { sessions: Session[] }) {
-  const sorted = [...sessions].sort(
-    (a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0)
-  );
-
+export default function SessionsListView({ sessions }: { sessions: Paginated<Session> }) {
   return (
     <DataTable
-      title={`All Sessions (${sorted.length})`}
+      title={`All Sessions (${sessions.total})`}
       columns={columns}
-      rows={sorted}
+      rows={sessions.items}
       rowKey={(session) => session.sessionId}
       rowHref={(session) => `/sessions/${session.sessionId}`}
+      footer={
+        sessions.total > sessions.pageSize ? (
+          <PagePagination page={sessions.page} pageSize={sessions.pageSize} total={sessions.total} />
+        ) : null
+      }
       empty="No sessions found."
     />
   );

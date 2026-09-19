@@ -75,3 +75,14 @@ export type WorkspaceSessionSummary = {
   runCount: number;
   lastUsed: string;
 };
+
+/** What every list endpoint returns: one page, plus the size of the whole set. */
+export type Paginated<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+/** Matches the backend's default and cap; see apps/backend common/dto. */
+export const PAGE_SIZE = 100;

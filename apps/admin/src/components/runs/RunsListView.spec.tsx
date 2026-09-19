@@ -1,10 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import RunsListView from './RunsListView';
-import type { Run } from '#/lib/types';
+import type { Paginated, Run } from '#/lib/types';
 
 // Covers the bits of the runs list that have actually broken before: elapsed formatting,
 // the status badge mapping (which silently emitted no CSS when `rose`/`amber` collided
-// with Tailwind's scales), newest-first ordering, and the whole-row link that DataTable
+// with Tailwind's scales), row order coming straight from the server, the pagination
+// footer appearing only when there is more than one page, and the whole-row link DataTable
 // builds from rowHref.
 
 const run = (over: Partial<Run> = {}): Run => ({
@@ -21,9 +22,18 @@ const run = (over: Partial<Run> = {}): Run => ({
   ...over,
 });
 
+/** Wraps fixture rows in the envelope the view now receives. */
+const page = (items: Run[], over: Partial<Paginated<Run>> = {}): Paginated<Run> => ({
+  items,
+  total: items.length,
+  page: 1,
+  pageSize: 100,
+  ...over,
+});
+
 describe('RunsListView', () => {
   it('renders one row per run with the run id under the prompt', () => {
-    render(<RunsListView runs={[run()]} />);
+    render(<RunsListView runs={page([run()])} />);
 
     expect(screen.getByText('do a thing')).toBeDefined();
     expect(screen.getByText('r1')).toBeDefined();
@@ -31,33 +41,33 @@ describe('RunsListView', () => {
   });
 
   it('shows the caller tags under the prompt', () => {
-    render(<RunsListView runs={[run({ tags: ['job-hunt', 'matching'] })]} />);
+    render(<RunsListView runs={page([run({ tags: ['job-hunt', 'matching'] })])} />);
     expect(screen.getByText('job-hunt')).toBeDefined();
     expect(screen.getByText('matching')).toBeDefined();
   });
 
   it('labels the caption with the run count', () => {
-    render(<RunsListView runs={[run(), run({ runId: 'r2' })]} />);
+    render(<RunsListView runs={page([run(), run({ runId: 'r2' })])} />);
     expect(screen.getByText('Recent Runs (2)')).toBeDefined();
   });
 
   it('formats elapsed time from start and completion', () => {
-    render(<RunsListView runs={[run()]} />);
+    render(<RunsListView runs={page([run()])} />);
     expect(screen.getByText('18s')).toBeDefined();
   });
 
   it('shows runs that have not finished as running', () => {
-    render(<RunsListView runs={[run({ completedAt: null })]} />);
+    render(<RunsListView runs={page([run({ completedAt: null })])} />);
     expect(screen.getByText('running...')).toBeDefined();
   });
 
-  it('orders newest first regardless of input order', () => {
+  it('renders rows in the order the server sent them', () => {
     render(
       <RunsListView
-        runs={[
-          run({ runId: 'old', prompt: 'older', startedAt: '2026-01-01T00:00:00.000Z' }),
+        runs={page([
           run({ runId: 'new', prompt: 'newer', startedAt: '2026-06-01T00:00:00.000Z' }),
-        ]}
+          run({ runId: 'old', prompt: 'older', startedAt: '2026-01-01T00:00:00.000Z' }),
+        ])}
       />,
     );
     const rows = screen.getAllByRole('row').slice(1);
@@ -71,7 +81,7 @@ describe('RunsListView', () => {
     ['stopped', 'amber'],
     ['running', 'blue'],
   ] as const)('gives %s runs a %s badge that actually carries colour classes', (status, hue) => {
-    render(<RunsListView runs={[run({ status, completedAt: null })]} />);
+    render(<RunsListView runs={page([run({ status, completedAt: null })])} />);
     const badge = screen.getByText(status);
     // Guards the regression where a colour existed in markup but emitted no CSS.
     expect(badge.className).toContain(`${hue}-`);
@@ -79,13 +89,26 @@ describe('RunsListView', () => {
   });
 
   it('links each row to its run', () => {
-    render(<RunsListView runs={[run()]} />);
+    render(<RunsListView runs={page([run()])} />);
     const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/runs/r1');
     expect(link).toBeDefined();
   });
 
+  it('hides the pagination footer when everything fits on one page', () => {
+    render(<RunsListView runs={page([run()])} />);
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+  });
+
+  it('shows pagination once the total exceeds a page, with the total in the caption', () => {
+    render(<RunsListView runs={page([run()], { total: 438, page: 2, pageSize: 100 })} />);
+    expect(screen.getByText('Recent Runs (438)')).toBeDefined();
+    expect(screen.getByText(/Showing 101.*200 of 438/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDefined();
+  });
+
   it('shows an empty state rather than a bare table', () => {
-    render(<RunsListView runs={[]} />);
+    render(<RunsListView runs={page([])} />);
     expect(screen.getByText(/No runs yet/i)).toBeDefined();
   });
 });

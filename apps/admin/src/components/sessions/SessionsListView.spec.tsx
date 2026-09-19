@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import SessionsListView from './SessionsListView';
-import type { Session } from '#/lib/types';
+import type { Paginated, Session } from '#/lib/types';
 
 const session = (over: Partial<Session> = {}): Session => ({
   sessionId: 's1',
@@ -19,11 +19,20 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
+/** Wraps fixture rows in the envelope the view now receives. */
+const page = (items: Session[], over: Partial<Paginated<Session>> = {}): Paginated<Session> => ({
+  items,
+  total: items.length,
+  page: 1,
+  pageSize: 100,
+  ...over,
+});
+
 describe('SessionsListView', () => {
   it('shows the name with the id beneath, and "Unnamed" when there is none', () => {
     render(
       <SessionsListView
-        sessions={[session({ sessionId: 'named', name: 'implement-login' }), session({ sessionId: 'bare' })]}
+        sessions={page([session({ sessionId: 'named', name: 'implement-login' }), session({ sessionId: 'bare' })])}
       />,
     );
     expect(screen.getByText('implement-login')).toBeTruthy();
@@ -33,7 +42,7 @@ describe('SessionsListView', () => {
   });
 
   it('links each row to its session and its workspace', () => {
-    render(<SessionsListView sessions={[session({ sessionId: 's1', name: 'x' })]} />);
+    render(<SessionsListView sessions={page([session({ sessionId: 's1', name: 'x' })])} />);
     const links = screen.getAllByRole('link').map((link) => link.getAttribute('href'));
     expect(links).toContain('/sessions/s1');
     expect(links).toContain('/workspaces/w1');

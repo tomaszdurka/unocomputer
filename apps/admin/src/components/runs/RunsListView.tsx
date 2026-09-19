@@ -1,8 +1,9 @@
 'use client';
 
 import { DataTable } from '@app/ui';
+import PagePagination from '#/components/PagePagination';
 import type { Column } from '@app/ui';
-import type { Run } from '#/lib/types';
+import type { Run, Paginated } from '#/lib/types';
 import { Badge } from '@app/ui';
 
 function formatElapsed(ms: number) {
@@ -92,18 +93,19 @@ const columns: Column<Run>[] = [
   }
 ];
 
-export default function RunsListView({ runs }: { runs: Run[] }) {
-  const sorted = [...runs].sort(
-    (a, b) => (Date.parse(b.startedAt ?? '') || 0) - (Date.parse(a.startedAt ?? '') || 0)
-  );
-
+export default function RunsListView({ runs }: { runs: Paginated<Run> }) {
   return (
     <DataTable
-      title={`Recent Runs (${sorted.length})`}
+      title={`Recent Runs (${runs.total})`}
       columns={columns}
-      rows={sorted}
+      rows={runs.items}
       rowKey={(run) => run.runId}
       rowHref={(run) => `/runs/${run.runId}`}
+      footer={
+        runs.total > runs.pageSize ? (
+          <PagePagination page={runs.page} pageSize={runs.pageSize} total={runs.total} />
+        ) : null
+      }
       empty='No runs yet. Click "New Run" to get started!'
     />
   );

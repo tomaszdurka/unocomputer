@@ -1,11 +1,12 @@
 import { Controller, Get, Post, Param, Body, Query, Res, Headers, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CliEvent, JsonObject } from '../lib/json';
 import type { Run } from '../database/types';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
-import { RunDto } from '../database/dto';
-import { RUN_STATUSES } from '../database/run-status';
+import { PaginatedRunsDto, RunDto } from '../database/dto';
+import { type Page } from '../common/dto';
 import { CreateRunDto } from './dto/create-run.dto';
+import { ListRunsQueryDto } from './dto/list-runs-query.dto';
 import type { RunResult } from './dto/run-options';
 import { PersistenceService } from '../database/persistence.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -188,21 +189,12 @@ export class RunsController {
       '(repeatable - a run must carry EVERY tag given) and `status`, so a ' +
       'caller can ask "do I already have a run of this kind in flight?"',
   })
-  @ApiQuery({
-    name: 'tag',
-    required: false,
-    isArray: true,
-    type: String,
-    description: 'Repeatable. Runs must carry every tag given.',
-  })
-  @ApiQuery({ name: 'status', required: false, enum: RUN_STATUSES })
-  @ApiResponse({ status: 200, description: 'List of runs', type: [RunDto] })
-  async listRuns(
-    @Query('tag') tag?: string | string[],
-    @Query('status') status?: string,
-  ): Promise<Run[]> {
-    const tags = tag === undefined ? [] : Array.isArray(tag) ? tag : [tag];
-    return await this.persistence.findAllRuns({ tags, status });
+  @ApiResponse({ status: 200, description: 'A page of runs', type: PaginatedRunsDto })
+  async listRuns(@Query() query: ListRunsQueryDto): Promise<Page<Run>> {
+    return await this.persistence.findAllRuns(query, {
+      tags: query.tag,
+      status: query.status,
+    });
   }
 
   @Get(':runId')

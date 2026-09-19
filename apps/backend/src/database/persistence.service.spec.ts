@@ -27,11 +27,13 @@ function fakePrisma() {
       updateMany: record('run', 'updateMany', { count: 2 }),
       findUnique: record('run', 'findUnique', () => prisma.returns.run),
       findMany: record('run', 'findMany', () => prisma.returns.runs ?? []),
+      count: record('run', 'count', () => prisma.returns.runTotal ?? 0),
     },
     runEvent: { create: record('runEvent', 'create', {}) },
     workspace: {
       findUnique: record('workspace', 'findUnique', () => prisma.returns.workspace),
-      findMany: record('workspace', 'findMany', []),
+      findMany: record('workspace', 'findMany', () => prisma.returns.workspaces ?? []),
+      count: record('workspace', 'count', () => prisma.returns.workspaceTotal ?? 0),
       create: record('workspace', 'create', {}),
       update: record('workspace', 'update', {}),
     },
@@ -40,6 +42,7 @@ function fakePrisma() {
       update: record('session', 'update', {}),
       findUnique: record('session', 'findUnique', () => prisma.returns.session),
       findMany: record('session', 'findMany', () => prisma.returns.sessions ?? []),
+      count: record('session', 'count', () => prisma.returns.sessionTotal ?? 0),
     },
     prompt: {
       create: record('prompt', 'create', {}),
@@ -67,6 +70,8 @@ const rawRun = (over: Record<string, unknown> = {}) => ({
   workspaceId: 'w1',
   ...over,
 });
+
+const firstPage = { page: 1, pageSize: 100 };
 
 describe('PersistenceService JSON boundary', () => {
   let prisma: ReturnType<typeof fakePrisma>;
@@ -158,7 +163,7 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('asks for runs carrying EVERY tag, so "mine and in flight" is one query', async () => {
-    await service.findAllRuns({ tags: ['job-hunt', 'matching'], status: RunStatus.RUNNING });
+    await service.findAllRuns(firstPage, { tags: ['job-hunt', 'matching'], status: RunStatus.RUNNING });
     const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
     expect(call!.args.where).toEqual({
       status: RunStatus.RUNNING,
@@ -170,14 +175,54 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('does not filter when no tag or status is given', async () => {
-    await service.findAllRuns();
+    await service.findAllRuns(firstPage);
     const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
     expect(call!.args.where).toEqual({});
   });
 
-  it('returns an empty array, not undefined, when there are no runs', async () => {
+  it('returns an empty page, not undefined, when there are no runs', async () => {
     prisma.returns.runs = [];
-    await expect(service.findAllRuns()).resolves.toEqual([]);
+    await expect(service.findAllRuns(firstPage)).resolves.toEqual({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 100,
+    });
+  });
+
+  it('translates a page number into skip/take', async () => {
+    await service.findAllRuns({ page: 3, pageSize: 100 });
+    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    expect(call!.args.skip).toBe(200);
+    expect(call!.args.take).toBe(100);
+  });
+
+  it('counts the filtered set, not the whole table', async () => {
+    // Otherwise "page 2 of my running runs" would page against the wrong total.
+    await service.findAllRuns(firstPage, { tags: ['job-hunt'], status: RunStatus.RUNNING });
+    const count = prisma.calls.find((c) => c.op === 'count' && c.model === 'run');
+    const findMany = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    expect(count!.args.where).toEqual(findMany!.args.where);
+  });
+
+  it('echoes the requested page back with the total', async () => {
+    prisma.returns.runs = [rawRun()];
+    prisma.returns.runTotal = 438;
+    await expect(service.findAllRuns({ page: 2, pageSize: 100 })).resolves.toMatchObject({
+      total: 438,
+      page: 2,
+      pageSize: 100,
+    });
+  });
+
+  it('pages sessions and workspaces the same way', async () => {
+    await service.findAllSessions({ page: 2, pageSize: 100 });
+    await service.findAllWorkspaces({ page: 2, pageSize: 100 });
+    for (const model of ['session', 'workspace']) {
+      const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === model);
+      expect(call!.args.skip).toBe(100);
+      expect(call!.args.take).toBe(100);
+    }
   });
 
   it('reports how many runs it stopped', async () => {

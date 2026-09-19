@@ -1,8 +1,9 @@
 'use client';
 
 import { DataTable } from '@app/ui';
+import PagePagination from '#/components/PagePagination';
 import type { Column } from '@app/ui';
-import type { Workspace } from '#/lib/types';
+import type { Workspace, Paginated } from '#/lib/types';
 
 const muted = 'text-gray-500 dark:text-neutral-400';
 
@@ -51,17 +52,18 @@ const columns: Column<Workspace>[] = [
 
 // No caption strip here - the page already has a "Workspaces" heading above it, so a
 // second title inside the box would just repeat it.
-export default function WorkspacesListView({ workspaces }: { workspaces: Workspace[] }) {
-  const sorted = [...workspaces].sort(
-    (a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0)
-  );
-
+export default function WorkspacesListView({ workspaces }: { workspaces: Paginated<Workspace> }) {
   return (
     <DataTable
       columns={columns}
-      rows={sorted}
+      rows={workspaces.items}
       rowKey={(workspace) => workspace.workspaceId}
       rowHref={(workspace) => `/workspaces/${workspace.workspaceId}`}
+      footer={
+        workspaces.total > workspaces.pageSize ? (
+          <PagePagination page={workspaces.page} pageSize={workspaces.pageSize} total={workspaces.total} />
+        ) : null
+      }
       empty="No workspaces found."
     />
   );
