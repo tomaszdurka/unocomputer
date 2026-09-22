@@ -110,4 +110,4 @@ See [SPEC.md](./SPEC.md) for complete API documentation and architecture details
 
 ## License
 
-ISC
+MIT - see [LICENSE](./LICENSE).

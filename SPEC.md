@@ -495,23 +495,34 @@ The API binds no TCP port: it listens on a unix socket and the UI proxies `/api/
 
 ## Deployment
 
-### Vercel
+UnoComputer is a local application. It spawns CLI agents on your machine, in your
+folders, with your credentials - there is no hosted mode and no cloud target.
 
-The project includes Vercel deployment configuration:
+### Local deployment
 
-**Files:**
-- `vercel.json` - Vercel configuration that routes all requests to `server.js`
-- `api/` directory - Contains Vercel serverless functions:
-  - `api/hello.ts` - Example hello endpoint
-  - `api/test.ts` - Test endpoint
-  - `api/index.ts` - Main API entry point
-- `public/` directory - Static files:
-  - `public/index.html` - Landing page
+```bash
+pnpm deploy:local             # build, install as launchd agents, register with Caddy
+pnpm deploy:local status      # service state + health
+pnpm deploy:local logs        # tail both logs
+pnpm deploy:local uninstall   # remove services, keep the database
+```
 
-**Configuration:**
-The `vercel.json` file uses `@vercel/node` builder and routes all traffic to the main server.
+`scripts/deploy-local.sh` builds both apps, installs them as launchd user agents so
+they survive reboots, and serves them on one port behind Caddy at
+`http://<name>.localhost`. The admin runs as a Next standalone server; the backend
+keeps its unix socket under `~/Library/Application Support/<name>/`. The port is
+allocated automatically from 7800 up by scanning `$(brew --prefix)/etc/caddy.d`,
+which doubles as the registry shared with other apps deployed the same way.
 
-**Note:** The `.vercel` directory (Vercel CLI cache) is gitignored.
+| | path |
+| --- | --- |
+| code | `~/Library/Application Support/<name>/{backend,admin}` |
+| database | `~/Library/Application Support/<name>/data/<name>.db` |
+| socket | `~/Library/Application Support/<name>/backend.sock` |
+| logs | `~/Library/Logs/<name>/` |
+
+Dev runs on an OS-assigned port (`PORT=0`), so a deployment and a dev server never
+contend for the same number.
 
 ## Error Handling
 

@@ -23,8 +23,8 @@
     "nextjs",
     "nestjs"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Tomasz Durka",
+  "license": "MIT",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@nestjs/core",

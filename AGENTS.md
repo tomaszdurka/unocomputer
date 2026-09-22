@@ -115,7 +115,7 @@ src/
 - `src/workspaces/workspace-directory.ts`: managed dir layout and caller-directory validation
 - `src/lib/session-storage.ts`: where per-session CLI state lives
 - `SPEC.md`: Complete API specification
-- `vercel.json`: Deployment config (routes to `server.js`)
+- `scripts/deploy-local.sh`: Local deployment (launchd agents behind Caddy)
 
 ### Environment Variables
 
