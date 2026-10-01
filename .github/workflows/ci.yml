@@ -15,13 +15,13 @@ jobs:
     name: Quality gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Must come before setup-node, which needs pnpm on PATH to cache its store.
       # The version comes from the root packageManager field, so it cannot drift.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -39,7 +39,7 @@ jobs:
     name: Deploy script
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # There is nothing to deploy to - this app is installed onto a developer's own
       # machine by scripts/deploy-local.sh (launchd + Caddy), so the deployment path is
