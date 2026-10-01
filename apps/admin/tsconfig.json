@@ -1,19 +1,13 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2020"
-    ],
+    "lib": ["dom", "dom.iterable", "es2020"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "#/*": [
-        "src/*"
-      ]
+      "#/*": ["src/*"]
     },
     "allowJs": true,
     "esModuleInterop": true,
@@ -30,10 +24,7 @@
         "name": "next"
       }
     ],
-    "types": [
-      "node",
-      "jest"
-    ]
+    "types": ["node", "jest"]
   },
   "include": [
     "next-env.d.ts",
@@ -42,8 +33,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next"
-  ]
+  "exclude": ["node_modules", ".next"]
 }

@@ -7,14 +7,22 @@ import { listPrompts, createPrompt, deletePrompt } from '#/lib/api';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button, Input } from '@app/ui';
 
-export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt }: {
+export default function PromptLibraryDialog({
+  open,
+  onOpenChange,
+  onSelectPrompt,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectPrompt?: (prompt: Prompt) => void;
 }) {
   const [prompts, setPrompts] = useState<Prompt[] | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newPrompt, setNewPrompt] = useState({ name: '', description: '', prompt: '' });
+  const [newPrompt, setNewPrompt] = useState({
+    name: '',
+    description: '',
+    prompt: '',
+  });
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -34,7 +42,6 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
       loadPrompts();
     }
   }, [open, loadPrompts]);
-
 
   const handleAddPrompt = async () => {
     if (!newPrompt.name.trim() || !newPrompt.prompt.trim()) {
@@ -74,7 +81,8 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-500 dark:text-neutral-400">
-                {(prompts?.length ?? 0)} saved {(prompts?.length ?? 0) === 1 ? 'prompt' : 'prompts'}
+                {prompts?.length ?? 0} saved{' '}
+                {(prompts?.length ?? 0) === 1 ? 'prompt' : 'prompts'}
               </p>
               <Button
                 size="sm"
@@ -91,17 +99,23 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
                 <Input
                   placeholder="Prompt name"
                   value={newPrompt.name}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewPrompt({ ...newPrompt, name: e.target.value })
+                  }
                 />
                 <Input
                   placeholder="Description (optional)"
                   value={newPrompt.description}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewPrompt({ ...newPrompt, description: e.target.value })
+                  }
                 />
                 <textarea
                   placeholder="Prompt text"
                   value={newPrompt.prompt}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, prompt: e.target.value })}
+                  onChange={(e) =>
+                    setNewPrompt({ ...newPrompt, prompt: e.target.value })
+                  }
                   className="w-full min-h-[100px] rounded-md border border-gray-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:ring-neutral-500 resize-y"
                 />
                 <Button onClick={handleAddPrompt} className="w-full">
@@ -111,10 +125,13 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
             )}
 
             {prompts === null ? (
-              <p className="text-center py-8 text-sm text-gray-500 dark:text-neutral-400">Loading...</p>
+              <p className="text-center py-8 text-sm text-gray-500 dark:text-neutral-400">
+                Loading...
+              </p>
             ) : (prompts?.length ?? 0) === 0 ? (
               <p className="text-center py-8 text-sm text-gray-500 dark:text-neutral-400">
-                No saved prompts yet. Click &quot;New Prompt&quot; to create one.
+                No saved prompts yet. Click &quot;New Prompt&quot; to create
+                one.
               </p>
             ) : (
               <div className="space-y-2">
@@ -128,7 +145,9 @@ export default function PromptLibraryDialog({ open, onOpenChange, onSelectPrompt
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm">{prompt.name}</h3>
                         {prompt.description && (
-                          <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">{prompt.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
+                            {prompt.description}
+                          </p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-neutral-400 mt-2 line-clamp-2">
                           {prompt.prompt}

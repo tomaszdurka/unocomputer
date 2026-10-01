@@ -22,7 +22,10 @@ describe('RunsController (HTTP)', () => {
     app = await createHttpTestApp({
       controllers: [RunsController],
       providers: [
-        { provide: PersistenceService, useValue: { findAllRuns, findRunWithEvents } },
+        {
+          provide: PersistenceService,
+          useValue: { findAllRuns, findRunWithEvents },
+        },
         { provide: RunsService, useValue: { run: jest.fn() } },
       ],
     });
@@ -60,10 +63,16 @@ describe('RunsController (HTTP)', () => {
     });
 
     it('accepts a tag and a status together, alongside paging', async () => {
-      await get(`/api/runs?tag=ci&status=${RunStatus.RUNNING}&page=2&pageSize=25`).expect(200);
+      await get(
+        `/api/runs?tag=ci&status=${RunStatus.RUNNING}&page=2&pageSize=25`,
+      ).expect(200);
       const [pagination, filters] = findAllRuns.mock.calls[0];
-      expect(filters).toEqual(expect.objectContaining({ tags: ['ci'], status: RunStatus.RUNNING }));
-      expect(pagination).toEqual(expect.objectContaining({ page: 2, pageSize: 25 }));
+      expect(filters).toEqual(
+        expect.objectContaining({ tags: ['ci'], status: RunStatus.RUNNING }),
+      );
+      expect(pagination).toEqual(
+        expect.objectContaining({ page: 2, pageSize: 25 }),
+      );
     });
   });
 
@@ -114,7 +123,10 @@ describe('RunsController (HTTP)', () => {
     });
 
     it('returns the run when it exists', async () => {
-      findRunWithEvents.mockResolvedValue({ runId: 'r1', status: RunStatus.SUCCESS });
+      findRunWithEvents.mockResolvedValue({
+        runId: 'r1',
+        status: RunStatus.SUCCESS,
+      });
       const res = await get('/api/runs/r1').expect(200);
       expect(res.body.runId).toBe('r1');
     });

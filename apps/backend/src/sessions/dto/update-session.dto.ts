@@ -6,7 +6,7 @@ export class UpdateSessionDto {
     description: 'Session label; null clears it',
     required: false,
     nullable: true,
-    example: 'implement-login'
+    example: 'implement-login',
   })
   @IsString()
   @IsOptional()

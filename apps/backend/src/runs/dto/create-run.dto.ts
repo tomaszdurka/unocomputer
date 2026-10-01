@@ -12,7 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateRunDto {
   @ApiProperty({
     description: 'The prompt to execute with Claude',
-    example: 'Write a function that calculates fibonacci numbers'
+    example: 'Write a function that calculates fibonacci numbers',
   })
   @IsString()
   @IsNotEmpty()
@@ -21,26 +21,29 @@ export class CreateRunDto {
   @ApiProperty({
     description: 'Optional JSON schema for structured output',
     required: false,
-    example: { type: 'object', properties: { result: { type: 'number' } } }
+    example: { type: 'object', properties: { result: { type: 'number' } } },
   })
   @IsObject()
   @IsOptional()
   schema?: Record<string, unknown>;
 
   @ApiProperty({
-    description: 'Optional workspace ID (creates new session in workspace if provided without sessionId)',
+    description:
+      'Optional workspace ID (creates new session in workspace if provided without sessionId)',
     required: false,
-    example: '550e8400-e29b-41d4-a716-446655440000'
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[a-f0-9-]+$/, { message: 'workspaceId must be a valid UUID format' })
+  @Matches(/^[a-f0-9-]+$/, {
+    message: 'workspaceId must be a valid UUID format',
+  })
   workspaceId?: string;
 
   @ApiProperty({
     description: 'Optional session ID (continues existing session if provided)',
     required: false,
-    example: '550e8400-e29b-41d4-a716-446655440000'
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsString()
   @IsOptional()
@@ -53,7 +56,7 @@ export class CreateRunDto {
       'the CLI model as "<cli>:<model>" (claude only), e.g. "claude:sonnet" or ' +
       '"claude:sonnet-4-5". Without the suffix the CLI default applies.',
     required: false,
-    example: 'claude:sonnet'
+    example: 'claude:sonnet',
   })
   @IsString()
   @IsOptional()
@@ -61,7 +64,6 @@ export class CreateRunDto {
     message: 'model must be claude[:<model>], gemini, or codex',
   })
   model?: string;
-
 
   @ApiProperty({
     description:
@@ -84,8 +86,8 @@ export class CreateRunDto {
 
   @ApiProperty({
     description:
-      'Extra environment for the CLI process, layered over the service\'s own - ' +
-      'a project\'s keys, or where the caller can be reached. Values are strings.',
+      "Extra environment for the CLI process, layered over the service's own - " +
+      "a project's keys, or where the caller can be reached. Values are strings.",
     required: false,
     type: Object,
     additionalProperties: { type: 'string' },

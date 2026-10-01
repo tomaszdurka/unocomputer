@@ -16,7 +16,11 @@ type NewSessionDialogProps = {
  * A session ahead of its first run, so it can be named. The session page is
  * where the first prompt goes, same as every prompt after it.
  */
-export default function NewSessionDialog({ open, onOpenChange, workspaceId }: NewSessionDialogProps) {
+export default function NewSessionDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+}: NewSessionDialogProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +39,10 @@ export default function NewSessionDialog({ open, onOpenChange, workspaceId }: Ne
     setSubmitting(true);
     setError(null);
     try {
-      const session = await createSession({ workspaceId, name: name.trim() || undefined });
+      const session = await createSession({
+        workspaceId,
+        name: name.trim() || undefined,
+      });
       setName('');
       onOpenChange(false);
       router.push(`/sessions/${session.sessionId}`);
@@ -72,7 +79,12 @@ export default function NewSessionDialog({ open, onOpenChange, workspaceId }: Ne
           ) : null}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>

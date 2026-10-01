@@ -3,10 +3,14 @@ import './globals.css';
 
 export const metadata = {
   title: 'UnoComputer',
-  description: 'UnoComputer Dashboard - Workspaces and Runs'
+  description: 'UnoComputer Dashboard - Workspaces and Runs',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -43,7 +43,12 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
         {items.map((item) => (
-          <NavItem key={item.href} href={item.href} icon={item.icon} match={item.match}>
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            match={item.match}
+          >
             {item.label}
           </NavItem>
         ))}

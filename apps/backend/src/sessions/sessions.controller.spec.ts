@@ -40,7 +40,8 @@ describe('SessionsController (HTTP)', () => {
   });
 
   const get = (url: string) => request(app.getHttpServer()).get(url);
-  const post = (body: object) => request(app.getHttpServer()).post('/api/sessions').send(body);
+  const post = (body: object) =>
+    request(app.getHttpServer()).post('/api/sessions').send(body);
 
   describe('GET /api/sessions', () => {
     it('lists a page with the default size', async () => {
@@ -77,7 +78,10 @@ describe('SessionsController (HTTP)', () => {
 
     it('creates the session against the resolved workspace', async () => {
       getWorkspace.mockResolvedValue({ workspaceId: WORKSPACE_ID });
-      const res = await post({ workspaceId: WORKSPACE_ID, name: 'implement-login' }).expect(201);
+      const res = await post({
+        workspaceId: WORKSPACE_ID,
+        name: 'implement-login',
+      }).expect(201);
       expect(createSession).toHaveBeenCalledWith({
         workspaceId: WORKSPACE_ID,
         name: 'implement-login',

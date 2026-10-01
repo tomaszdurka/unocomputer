@@ -10,7 +10,12 @@ export type PaginationProps = {
   onPageChange: (page: number) => void;
 };
 
-export function Pagination({ page, pageSize, total, onPageChange }: PaginationProps) {
+export function Pagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: PaginationProps) {
   const lastPage = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);

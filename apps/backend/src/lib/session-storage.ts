@@ -9,7 +9,9 @@ export type SessionProvider = 'codex' | 'gemini';
  * ./data/sessions beside the database when unset. Never the workspace folder,
  * which may be a real project of the caller's.
  */
-export function sessionsDir(env: Record<string, string | undefined> = process.env): string {
+export function sessionsDir(
+  env: Record<string, string | undefined> = process.env,
+): string {
   return env.SESSIONS_DIR ?? path.resolve(process.cwd(), '../../data/sessions');
 }
 

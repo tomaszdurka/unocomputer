@@ -7,12 +7,7 @@ import { CodexModule } from '../codex/codex.module';
 import { PersistenceModule } from '../database/persistence.module';
 
 @Module({
-  imports: [
-    ClaudeModule,
-    GeminiModule,
-    CodexModule,
-    PersistenceModule,
-  ],
+  imports: [ClaudeModule, GeminiModule, CodexModule, PersistenceModule],
   controllers: [RunsController],
   providers: [RunsService],
   exports: [RunsService],

@@ -18,7 +18,12 @@ type InlineNameEditorProps = {
  * cancels, and a failed save says so where the person is looking rather than
  * in the console.
  */
-export default function InlineNameEditor({ value, emptyLabel, placeholder, onSave }: InlineNameEditorProps) {
+export default function InlineNameEditor({
+  value,
+  emptyLabel,
+  placeholder,
+  onSave,
+}: InlineNameEditorProps) {
   const [current, setCurrent] = useState<string | null>(value);
   const [draft, setDraft] = useState(value ?? '');
   const [editing, setEditing] = useState(false);
@@ -63,7 +68,11 @@ export default function InlineNameEditor({ value, emptyLabel, placeholder, onSav
     return (
       <div className="flex items-center gap-3">
         <h2 className="flex-1 truncate text-2xl font-bold tracking-tight">
-          {current || <span className="italic text-gray-500 dark:text-neutral-400">{emptyLabel}</span>}
+          {current || (
+            <span className="italic text-gray-500 dark:text-neutral-400">
+              {emptyLabel}
+            </span>
+          )}
         </h2>
         <button
           type="button"
@@ -115,7 +124,9 @@ export default function InlineNameEditor({ value, emptyLabel, placeholder, onSav
           <X className="h-5 w-5" />
         </button>
       </div>
-      {error ? <p className="mt-2 text-sm text-rose-700 dark:text-rose-400">{error}</p> : null}
+      {error ? (
+        <p className="mt-2 text-sm text-rose-700 dark:text-rose-400">{error}</p>
+      ) : null}
     </div>
   );
 }

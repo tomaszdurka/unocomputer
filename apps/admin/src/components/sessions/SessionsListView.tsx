@@ -20,13 +20,17 @@ const columns: Column<Session>[] = [
     cell: (session) => (
       <div className="min-w-0">
         <p className="truncate font-medium">
-          {session.name || <span className="italic font-normal text-gray-500 dark:text-neutral-400">Unnamed</span>}
+          {session.name || (
+            <span className="italic font-normal text-gray-500 dark:text-neutral-400">
+              Unnamed
+            </span>
+          )}
         </p>
         <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
           {session.sessionId}
         </p>
       </div>
-    )
+    ),
   },
   {
     key: 'workspace',
@@ -45,7 +49,7 @@ const columns: Column<Session>[] = [
         </Link>
       ) : (
         '-'
-      )
+      ),
   },
   {
     key: 'runs',
@@ -58,18 +62,22 @@ const columns: Column<Session>[] = [
       >
         {session.runs?.length || 0} run{session.runs?.length !== 1 ? 's' : ''}
       </Badge>
-    )
+    ),
   },
   {
     key: 'created',
     header: 'Created',
     width: '200px',
     className: 'whitespace-nowrap text-gray-500 dark:text-neutral-400',
-    cell: (session) => formatDate(session.createdAt)
-  }
+    cell: (session) => formatDate(session.createdAt),
+  },
 ];
 
-export default function SessionsListView({ sessions }: { sessions: Paginated<Session> }) {
+export default function SessionsListView({
+  sessions,
+}: {
+  sessions: Paginated<Session>;
+}) {
   return (
     <DataTable
       title={`All Sessions (${sessions.total})`}
@@ -79,7 +87,11 @@ export default function SessionsListView({ sessions }: { sessions: Paginated<Ses
       rowHref={(session) => `/sessions/${session.sessionId}`}
       footer={
         sessions.total > sessions.pageSize ? (
-          <PagePagination page={sessions.page} pageSize={sessions.pageSize} total={sessions.total} />
+          <PagePagination
+            page={sessions.page}
+            pageSize={sessions.pageSize}
+            total={sessions.total}
+          />
         ) : null
       }
       empty="No sessions found."

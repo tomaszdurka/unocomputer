@@ -10,7 +10,11 @@ import { Badge, Button } from '@app/ui';
 type RunPromptDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (input: { prompt: string; schema?: unknown; model?: string }) => Promise<{ runId?: string }>;
+  onSubmit: (input: {
+    prompt: string;
+    schema?: unknown;
+    model?: string;
+  }) => Promise<{ runId?: string }>;
   dialogTitle?: string;
   runs?: Run[];
   submitButtonText?: string;
@@ -32,9 +36,11 @@ export default function RunPromptDialog({
   onSubmit,
   dialogTitle = 'Run Prompt',
   runs = [],
-  submitButtonText = 'Run Prompt'
+  submitButtonText = 'Run Prompt',
 }: RunPromptDialogProps) {
-  const [selectedSavedPrompt, setSelectedSavedPrompt] = useState<Prompt | null>(null);
+  const [selectedSavedPrompt, setSelectedSavedPrompt] = useState<Prompt | null>(
+    null,
+  );
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [runSchema, setRunSchema] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +50,10 @@ export default function RunPromptDialog({
   // Determine last used model from runs (most recent run's model)
   const lastUsedModel = useMemo(() => {
     if (!runs || runs.length === 0) return null;
-    const sortedRuns = [...runs].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+    const sortedRuns = [...runs].sort(
+      (a, b) =>
+        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+    );
     return sortedRuns[0]?.model || null;
   }, [runs]);
 
@@ -59,7 +68,9 @@ export default function RunPromptDialog({
     if (selectedSavedPrompt) {
       const currentText = additionalPrompt.trim();
       const promptText = selectedSavedPrompt.prompt.trim();
-      setAdditionalPrompt(currentText ? `${promptText}\n\n${currentText}` : promptText);
+      setAdditionalPrompt(
+        currentText ? `${promptText}\n\n${currentText}` : promptText,
+      );
       setSelectedSavedPrompt(null);
     }
   };
@@ -70,7 +81,9 @@ export default function RunPromptDialog({
 
   const handleSubmit = async () => {
     const finalPrompt = selectedSavedPrompt
-      ? (additionalPrompt.trim() ? `${selectedSavedPrompt.prompt}\n\n${additionalPrompt}` : selectedSavedPrompt.prompt)
+      ? additionalPrompt.trim()
+        ? `${selectedSavedPrompt.prompt}\n\n${additionalPrompt}`
+        : selectedSavedPrompt.prompt
       : additionalPrompt;
 
     if (!finalPrompt.trim()) {
@@ -112,7 +125,10 @@ export default function RunPromptDialog({
         window.location.reload(); // Refresh to show new run
       }, 2000);
     } catch (err: unknown) {
-      setRunError((err instanceof Error ? err.message : String(err)) || 'Failed to queue job');
+      setRunError(
+        (err instanceof Error ? err.message : String(err)) ||
+          'Failed to queue job',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -124,9 +140,7 @@ export default function RunPromptDialog({
         <div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Model
-              </label>
+              <label className="block text-sm font-medium mb-2">Model</label>
               <input
                 list="run-model-options"
                 value={runModel}
@@ -141,21 +155,25 @@ export default function RunPromptDialog({
                 ))}
               </datalist>
               <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                The CLI to run, optionally pinning its model: claude, claude:sonnet,
-                claude:sonnet-4-5, gemini, codex.
+                The CLI to run, optionally pinning its model: claude,
+                claude:sonnet, claude:sonnet-4-5, gemini, codex.
                 {lastUsedModel ? ` Last used: ${lastUsedModel}.` : ''}
               </p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium">
-                  {selectedSavedPrompt ? 'Additional Instructions' : 'Prompt'} <span className="text-rose-600 dark:text-rose-400">*</span>
+                  {selectedSavedPrompt ? 'Additional Instructions' : 'Prompt'}{' '}
+                  <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <PromptSelector onSelect={handleSelectPrompt} />
               </div>
               {selectedSavedPrompt && (
                 <div className="mb-2 flex items-center gap-2 p-2 rounded-lg border bg-gray-100 dark:bg-neutral-800/30">
-                  <Badge variant="outline" className="bg-mint/10 text-mint border-mint/20">
+                  <Badge
+                    variant="outline"
+                    className="bg-mint/10 text-mint border-mint/20"
+                  >
                     {selectedSavedPrompt.name}
                   </Badge>
                   <button
@@ -179,7 +197,11 @@ export default function RunPromptDialog({
               <textarea
                 value={additionalPrompt}
                 onChange={(e) => setAdditionalPrompt(e.target.value)}
-                placeholder={selectedSavedPrompt ? "Add additional instructions (optional)..." : "Enter your prompt here..."}
+                placeholder={
+                  selectedSavedPrompt
+                    ? 'Add additional instructions (optional)...'
+                    : 'Enter your prompt here...'
+                }
                 className={`w-full rounded-md border border-gray-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:ring-neutral-500 resize-y ${selectedSavedPrompt ? 'min-h-[120px] max-h-[60vh]' : 'min-h-[240px] max-h-[60vh]'}`}
                 disabled={isSubmitting}
               />
@@ -216,7 +238,10 @@ export default function RunPromptDialog({
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || (!selectedSavedPrompt && !additionalPrompt.trim())}
+                disabled={
+                  isSubmitting ||
+                  (!selectedSavedPrompt && !additionalPrompt.trim())
+                }
               >
                 {isSubmitting ? 'Queuing...' : submitButtonText}
               </Button>

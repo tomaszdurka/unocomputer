@@ -18,6 +18,12 @@ type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
   variant?: BadgeVariant;
 };
 
-export function Badge({ variant = 'solid', className = '', ...props }: BadgeProps) {
-  return <span className={`${base} ${variants[variant]} ${className}`} {...props} />;
+export function Badge({
+  variant = 'solid',
+  className = '',
+  ...props
+}: BadgeProps) {
+  return (
+    <span className={`${base} ${variants[variant]} ${className}`} {...props} />
+  );
 }

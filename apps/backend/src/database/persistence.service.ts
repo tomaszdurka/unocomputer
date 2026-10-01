@@ -91,7 +91,10 @@ export class PersistenceService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to store event for run ${payload.runId}:`, error);
+      this.logger.error(
+        `Failed to store event for run ${payload.runId}:`,
+        error,
+      );
     }
   }
 
@@ -115,7 +118,10 @@ export class PersistenceService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to set status for run ${payload.runId}:`, error);
+      this.logger.error(
+        `Failed to set status for run ${payload.runId}:`,
+        error,
+      );
     }
   }
 
@@ -159,7 +165,9 @@ export class PersistenceService {
   /**
    * Get all sessions
    */
-  async findAllSessions(pagination: PaginationQueryDto): Promise<Page<Session>> {
+  async findAllSessions(
+    pagination: PaginationQueryDto,
+  ): Promise<Page<Session>> {
     const [sessions, total] = await Promise.all([
       this.prisma.session.findMany({
         ...toSkipTake(pagination),
@@ -169,7 +177,10 @@ export class PersistenceService {
       this.prisma.session.count(),
     ]);
     return {
-      items: sessions.map((session) => ({ ...session, runs: hydrateRuns(session.runs) })),
+      items: sessions.map((session) => ({
+        ...session,
+        runs: hydrateRuns(session.runs),
+      })),
       total,
       page: pagination.page,
       pageSize: pagination.pageSize,
@@ -270,7 +281,9 @@ export class PersistenceService {
   /**
    * Get all workspaces
    */
-  async findAllWorkspaces(pagination: PaginationQueryDto): Promise<Page<Workspace>> {
+  async findAllWorkspaces(
+    pagination: PaginationQueryDto,
+  ): Promise<Page<Workspace>> {
     const [items, total] = await Promise.all([
       this.prisma.workspace.findMany({
         ...toSkipTake(pagination),
@@ -278,7 +291,12 @@ export class PersistenceService {
       }),
       this.prisma.workspace.count(),
     ]);
-    return { items, total, page: pagination.page, pageSize: pagination.pageSize };
+    return {
+      items,
+      total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    };
   }
 
   /**
@@ -300,7 +318,9 @@ export class PersistenceService {
         sessions: { orderBy: { createdAt: 'desc' } },
       },
     });
-    return workspace ? { ...workspace, runs: hydrateRuns(workspace.runs) } : null;
+    return workspace
+      ? { ...workspace, runs: hydrateRuns(workspace.runs) }
+      : null;
   }
 
   /**
@@ -359,7 +379,10 @@ export class PersistenceService {
   /**
    * Update a workspace
    */
-  async updateWorkspace(payload: { workspaceId: string; name?: string | null }) {
+  async updateWorkspace(payload: {
+    workspaceId: string;
+    name?: string | null;
+  }) {
     const data: Prisma.WorkspaceUpdateInput = {};
     if (payload.name !== undefined) data.name = payload.name;
 
@@ -419,7 +442,9 @@ export class PersistenceService {
    * Get a prompt by ID
    */
   async getPrompt(payload: { promptId: string }) {
-    return this.prisma.prompt.findUnique({ where: { promptId: payload.promptId } });
+    return this.prisma.prompt.findUnique({
+      where: { promptId: payload.promptId },
+    });
   }
 
   /**
@@ -433,7 +458,8 @@ export class PersistenceService {
   }) {
     const data: Prisma.PromptUpdateInput = {};
     if (payload.name !== undefined) data.name = payload.name;
-    if (payload.description !== undefined) data.description = payload.description;
+    if (payload.description !== undefined)
+      data.description = payload.description;
     if (payload.prompt !== undefined) data.prompt = payload.prompt;
 
     try {
@@ -451,7 +477,9 @@ export class PersistenceService {
    */
   async deletePrompt(payload: { promptId: string }): Promise<boolean> {
     try {
-      await this.prisma.prompt.delete({ where: { promptId: payload.promptId } });
+      await this.prisma.prompt.delete({
+        where: { promptId: payload.promptId },
+      });
       return true;
     } catch {
       return false;

@@ -16,7 +16,9 @@ export class ListRunsQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   // One `?tag=` arrives as a string, several as an array; callers downstream want a list.
-  @Transform(({ value }) => (value === undefined ? [] : Array.isArray(value) ? value : [value]))
+  @Transform(({ value }) =>
+    value === undefined ? [] : Array.isArray(value) ? value : [value],
+  )
   tag: string[] = [];
 
   @ApiPropertyOptional({ enum: RUN_STATUSES })

@@ -66,7 +66,9 @@ export function DataTable<Row>({
       {title ? (
         <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-3 dark:border-neutral-800">
           <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-          {headerActions ? <div className="shrink-0">{headerActions}</div> : null}
+          {headerActions ? (
+            <div className="shrink-0">{headerActions}</div>
+          ) : null}
         </div>
       ) : null}
 
@@ -74,11 +76,16 @@ export function DataTable<Row>({
         {/* table-fixed once any width is declared: with auto layout a long cell in an
             unsized column outgrows its <col> hint and squeezes the rest off-screen,
             and `truncate` never kicks in because the cell has no width to truncate to. */}
-        <table className={`w-full text-left text-sm ${hasWidths ? 'table-fixed' : ''}`}>
+        <table
+          className={`w-full text-left text-sm ${hasWidths ? 'table-fixed' : ''}`}
+        >
           {hasWidths ? (
             <colgroup>
               {columns.map((column) => (
-                <col key={column.key} style={column.width ? { width: column.width } : undefined} />
+                <col
+                  key={column.key}
+                  style={column.width ? { width: column.width } : undefined}
+                />
               ))}
             </colgroup>
           ) : null}
@@ -123,7 +130,10 @@ export function DataTable<Row>({
                     {columns.map((column, index) => {
                       const content = column.cell(row);
                       return (
-                        <td key={column.key} className={`px-4 py-3 ${column.className ?? ''}`}>
+                        <td
+                          key={column.key}
+                          className={`px-4 py-3 ${column.className ?? ''}`}
+                        >
                           {href && index === 0 ? (
                             <Link href={href} className="hover:underline">
                               {content}
@@ -143,7 +153,9 @@ export function DataTable<Row>({
       </div>
 
       {footer ? (
-        <div className="border-t border-gray-200 px-4 py-3 dark:border-neutral-800">{footer}</div>
+        <div className="border-t border-gray-200 px-4 py-3 dark:border-neutral-800">
+          {footer}
+        </div>
       ) : null}
     </div>
   );

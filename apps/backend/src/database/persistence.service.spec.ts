@@ -15,10 +15,13 @@ type Recorded = { model: string; op: string; args: any };
 
 function fakePrisma() {
   const calls: Recorded[] = [];
-  const record = (model: string, op: string, result: unknown) => (args: any) => {
-    calls.push({ model, op, args });
-    return Promise.resolve(typeof result === 'function' ? (result as any)(args) : result);
-  };
+  const record =
+    (model: string, op: string, result: unknown) => (args: any) => {
+      calls.push({ model, op, args });
+      return Promise.resolve(
+        typeof result === 'function' ? (result as any)(args) : result,
+      );
+    };
   const prisma = {
     calls,
     returns: {} as Record<string, unknown>,
@@ -32,9 +35,21 @@ function fakePrisma() {
     },
     runEvent: { create: record('runEvent', 'create', {}) },
     workspace: {
-      findUnique: record('workspace', 'findUnique', () => prisma.returns.workspace),
-      findMany: record('workspace', 'findMany', () => prisma.returns.workspaces ?? []),
-      count: record('workspace', 'count', () => prisma.returns.workspaceTotal ?? 0),
+      findUnique: record(
+        'workspace',
+        'findUnique',
+        () => prisma.returns.workspace,
+      ),
+      findMany: record(
+        'workspace',
+        'findMany',
+        () => prisma.returns.workspaces ?? [],
+      ),
+      count: record(
+        'workspace',
+        'count',
+        () => prisma.returns.workspaceTotal ?? 0,
+      ),
       create: record('workspace', 'create', {}),
       update: record('workspace', 'update', {}),
     },
@@ -42,7 +57,11 @@ function fakePrisma() {
       create: record('session', 'create', {}),
       update: record('session', 'update', {}),
       findUnique: record('session', 'findUnique', () => prisma.returns.session),
-      findMany: record('session', 'findMany', () => prisma.returns.sessions ?? []),
+      findMany: record(
+        'session',
+        'findMany',
+        () => prisma.returns.sessions ?? [],
+      ),
       count: record('session', 'count', () => prisma.returns.sessionTotal ?? 0),
     },
     prompt: {
@@ -84,24 +103,40 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('stores an event payload as a JSON string', async () => {
-    await service.storeEvent({ runId: 'r1', sequence: 3, event: { type: 'text', body: 'x' } });
+    await service.storeEvent({
+      runId: 'r1',
+      sequence: 3,
+      event: { type: 'text', body: 'x' },
+    });
 
     const call = prisma.calls.find((c) => c.model === 'runEvent');
     expect(typeof call!.args.data.payload).toBe('string');
-    expect(JSON.parse(call!.args.data.payload)).toEqual({ type: 'text', body: 'x' });
+    expect(JSON.parse(call!.args.data.payload)).toEqual({
+      type: 'text',
+      body: 'x',
+    });
     expect(call!.args.data.type).toBe('text');
     // the id is derived from run + sequence, which is what keeps events ordered and unique
     expect(call!.args.data.id).toBe('r1-3');
   });
 
   it('falls back to "unknown" when an event carries no type', async () => {
-    await service.storeEvent({ runId: 'r1', sequence: 1, event: { body: 'x' } });
+    await service.storeEvent({
+      runId: 'r1',
+      sequence: 1,
+      event: { body: 'x' },
+    });
     const call = prisma.calls.find((c) => c.model === 'runEvent');
     expect(call!.args.data.type).toBe('unknown');
   });
 
   it('serialises a run result on the way in', async () => {
-    await service.setStatus({ runId: 'r1', status: RunStatus.SUCCESS, result: { ok: true }, exitCode: 0 });
+    await service.setStatus({
+      runId: 'r1',
+      status: RunStatus.SUCCESS,
+      result: { ok: true },
+      exitCode: 0,
+    });
 
     const call = prisma.calls.find((c) => c.op === 'update');
     expect(call!.args.data.result).toBe('{"ok":true}');
@@ -145,7 +180,9 @@ describe('PersistenceService JSON boundary', () => {
       workspaceId: 'w1',
       tags: ['job-hunt', 'matching'],
     });
-    const call = prisma.calls.find((c) => c.op === 'create' && c.model === 'run');
+    const call = prisma.calls.find(
+      (c) => c.op === 'create' && c.model === 'run',
+    );
     expect(call!.args.data.tags).toBe('["job-hunt","matching"]');
 
     prisma.returns.run = rawRun({ tags: '["job-hunt","matching"]' });
@@ -154,8 +191,14 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('defaults tags to an empty array, never undefined', async () => {
-    await service.createRun({ prompt: 'p', sessionId: 's1', workspaceId: 'w1' });
-    const call = prisma.calls.find((c) => c.op === 'create' && c.model === 'run');
+    await service.createRun({
+      prompt: 'p',
+      sessionId: 's1',
+      workspaceId: 'w1',
+    });
+    const call = prisma.calls.find(
+      (c) => c.op === 'create' && c.model === 'run',
+    );
     expect(call!.args.data.tags).toBe('[]');
 
     prisma.returns.run = rawRun({ tags: 'not json' });
@@ -164,8 +207,13 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('asks for runs carrying EVERY tag, so "mine and in flight" is one query', async () => {
-    await service.findAllRuns(firstPage, { tags: ['job-hunt', 'matching'], status: RunStatus.RUNNING });
-    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    await service.findAllRuns(firstPage, {
+      tags: ['job-hunt', 'matching'],
+      status: RunStatus.RUNNING,
+    });
+    const call = prisma.calls.find(
+      (c) => c.op === 'findMany' && c.model === 'run',
+    );
     expect(call!.args.where).toEqual({
       status: RunStatus.RUNNING,
       AND: [
@@ -177,7 +225,9 @@ describe('PersistenceService JSON boundary', () => {
 
   it('does not filter when no tag or status is given', async () => {
     await service.findAllRuns(firstPage);
-    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    const call = prisma.calls.find(
+      (c) => c.op === 'findMany' && c.model === 'run',
+    );
     expect(call!.args.where).toEqual({});
   });
 
@@ -193,23 +243,34 @@ describe('PersistenceService JSON boundary', () => {
 
   it('translates a page number into skip/take', async () => {
     await service.findAllRuns({ page: 3, pageSize: 100 });
-    const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    const call = prisma.calls.find(
+      (c) => c.op === 'findMany' && c.model === 'run',
+    );
     expect(call!.args.skip).toBe(200);
     expect(call!.args.take).toBe(100);
   });
 
   it('counts the filtered set, not the whole table', async () => {
     // Otherwise "page 2 of my running runs" would page against the wrong total.
-    await service.findAllRuns(firstPage, { tags: ['job-hunt'], status: RunStatus.RUNNING });
-    const count = prisma.calls.find((c) => c.op === 'count' && c.model === 'run');
-    const findMany = prisma.calls.find((c) => c.op === 'findMany' && c.model === 'run');
+    await service.findAllRuns(firstPage, {
+      tags: ['job-hunt'],
+      status: RunStatus.RUNNING,
+    });
+    const count = prisma.calls.find(
+      (c) => c.op === 'count' && c.model === 'run',
+    );
+    const findMany = prisma.calls.find(
+      (c) => c.op === 'findMany' && c.model === 'run',
+    );
     expect(count!.args.where).toEqual(findMany!.args.where);
   });
 
   it('echoes the requested page back with the total', async () => {
     prisma.returns.runs = [rawRun()];
     prisma.returns.runTotal = 438;
-    await expect(service.findAllRuns({ page: 2, pageSize: 100 })).resolves.toMatchObject({
+    await expect(
+      service.findAllRuns({ page: 2, pageSize: 100 }),
+    ).resolves.toMatchObject({
       total: 438,
       page: 2,
       pageSize: 100,
@@ -220,7 +281,9 @@ describe('PersistenceService JSON boundary', () => {
     await service.findAllSessions({ page: 2, pageSize: 100 });
     await service.findAllWorkspaces({ page: 2, pageSize: 100 });
     for (const model of ['session', 'workspace']) {
-      const call = prisma.calls.find((c) => c.op === 'findMany' && c.model === model);
+      const call = prisma.calls.find(
+        (c) => c.op === 'findMany' && c.model === model,
+      );
       expect(call!.args.skip).toBe(100);
       expect(call!.args.take).toBe(100);
     }
@@ -236,25 +299,43 @@ describe('PersistenceService JSON boundary', () => {
   it('never lets a storeEvent failure escape into the run, but does record it', async () => {
     // Swallowing is deliberate: a lost event must not abort the run the user is watching.
     // Swallowing *silently* would be a bug, so the log line is part of the contract.
-    const logged = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    prisma.runEvent.create = () => Promise.reject(new Error('db gone')) as never;
+    const logged = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+    prisma.runEvent.create = () =>
+      Promise.reject(new Error('db gone')) as never;
     await expect(
       service.storeEvent({ runId: 'r1', sequence: 1, event: { type: 'text' } }),
     ).resolves.toBeUndefined();
-    expect(logged).toHaveBeenCalledWith(expect.stringContaining('r1'), expect.anything());
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringContaining('r1'),
+      expect.anything(),
+    );
     logged.mockRestore();
   });
 
   it('records a workspace over a directory without touching the filesystem', async () => {
-    await service.createWorkspace({ workspaceId: 'w1', workingDir: '/nowhere/at/all' });
-    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'create');
-    expect(call!.args.data).toEqual({ workspaceId: 'w1', workingDir: '/nowhere/at/all', name: null });
+    await service.createWorkspace({
+      workspaceId: 'w1',
+      workingDir: '/nowhere/at/all',
+    });
+    const call = prisma.calls.find(
+      (c) => c.model === 'workspace' && c.op === 'create',
+    );
+    expect(call!.args.data).toEqual({
+      workspaceId: 'w1',
+      workingDir: '/nowhere/at/all',
+      name: null,
+    });
   });
 
   it('reports a directory that already has a workspace as its own error', async () => {
     prisma.workspace.create = () =>
       Promise.reject(
-        new Prisma.PrismaClientKnownRequestError('dup', { code: 'P2002', clientVersion: 'x' }),
+        new Prisma.PrismaClientKnownRequestError('dup', {
+          code: 'P2002',
+          clientVersion: 'x',
+        }),
       ) as never;
 
     await expect(
@@ -263,7 +344,8 @@ describe('PersistenceService JSON boundary', () => {
   });
 
   it('lets any other create failure through untouched', async () => {
-    prisma.workspace.create = () => Promise.reject(new Error('db gone')) as never;
+    prisma.workspace.create = () =>
+      Promise.reject(new Error('db gone')) as never;
     await expect(
       service.createWorkspace({ workspaceId: 'w2', workingDir: '/x' }),
     ).rejects.toThrow('db gone');
@@ -271,32 +353,51 @@ describe('PersistenceService JSON boundary', () => {
 
   it('looks a workspace up by its directory', async () => {
     await service.findWorkspaceByWorkingDir({ workingDir: '/repo' });
-    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'findUnique');
+    const call = prisma.calls.find(
+      (c) => c.model === 'workspace' && c.op === 'findUnique',
+    );
     expect(call!.args.where).toEqual({ workingDir: '/repo' });
   });
 
   it('stores a session label, null when there is none', async () => {
     await service.createSession({ workspaceId: 'w1', name: 'first' });
     await service.createSession({ workspaceId: 'w1' });
-    const [named, bare] = prisma.calls.filter((c) => c.model === 'session' && c.op === 'create');
+    const [named, bare] = prisma.calls.filter(
+      (c) => c.model === 'session' && c.op === 'create',
+    );
     expect(named.args.data.name).toBe('first');
     expect(bare.args.data.name).toBeNull();
   });
 
   it('renames a session and answers null when it does not exist', async () => {
     await service.updateSession({ sessionId: 's1', name: 'renamed' });
-    const call = prisma.calls.find((c) => c.model === 'session' && c.op === 'update');
-    expect(call!.args).toEqual({ where: { sessionId: 's1' }, data: { name: 'renamed' } });
+    const call = prisma.calls.find(
+      (c) => c.model === 'session' && c.op === 'update',
+    );
+    expect(call!.args).toEqual({
+      where: { sessionId: 's1' },
+      data: { name: 'renamed' },
+    });
 
     prisma.session.update = () => Promise.reject(new Error('no row')) as never;
-    await expect(service.updateSession({ sessionId: 'gone', name: null })).resolves.toBeNull();
+    await expect(
+      service.updateSession({ sessionId: 'gone', name: null }),
+    ).resolves.toBeNull();
   });
 
   it('loads a workspace with its sessions, so one without a run still shows', async () => {
-    prisma.returns.workspace = { workspaceId: 'w1', runs: [], sessions: [{ sessionId: 's1' }] };
+    prisma.returns.workspace = {
+      workspaceId: 'w1',
+      runs: [],
+      sessions: [{ sessionId: 's1' }],
+    };
     const workspace = await service.findWorkspaceWithRuns({ id: 'w1' });
-    const call = prisma.calls.find((c) => c.model === 'workspace' && c.op === 'findUnique');
-    expect(call!.args.include.sessions).toEqual({ orderBy: { createdAt: 'desc' } });
+    const call = prisma.calls.find(
+      (c) => c.model === 'workspace' && c.op === 'findUnique',
+    );
+    expect(call!.args.include.sessions).toEqual({
+      orderBy: { createdAt: 'desc' },
+    });
     expect(workspace!.sessions).toEqual([{ sessionId: 's1' }]);
   });
 });

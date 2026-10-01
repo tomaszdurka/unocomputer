@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreatePromptDto {
   @ApiProperty({
     description: 'Prompt name',
-    example: 'Code Review Prompt'
+    example: 'Code Review Prompt',
   })
   @IsString()
   @IsNotEmpty()
@@ -13,7 +13,7 @@ export class CreatePromptDto {
   @ApiProperty({
     description: 'Prompt description',
     required: false,
-    example: 'A prompt for reviewing code quality'
+    example: 'A prompt for reviewing code quality',
   })
   @IsString()
   @IsOptional()
@@ -21,7 +21,7 @@ export class CreatePromptDto {
 
   @ApiProperty({
     description: 'The prompt text',
-    example: 'Review this code for best practices and suggest improvements'
+    example: 'Review this code for best practices and suggest improvements',
   })
   @IsString()
   @IsNotEmpty()
@@ -31,7 +31,7 @@ export class CreatePromptDto {
 export class UpdatePromptDto {
   @ApiProperty({
     description: 'Prompt name',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()
@@ -39,7 +39,7 @@ export class UpdatePromptDto {
 
   @ApiProperty({
     description: 'Prompt description',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()
@@ -47,7 +47,7 @@ export class UpdatePromptDto {
 
   @ApiProperty({
     description: 'The prompt text',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()

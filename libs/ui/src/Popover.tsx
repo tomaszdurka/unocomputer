@@ -9,7 +9,9 @@ export const Popover = PopoverPrimitive.Root;
 export const PopoverTrigger = PopoverPrimitive.Trigger;
 export const PopoverAnchor = PopoverPrimitive.Anchor;
 
-type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>;
+type PopoverContentProps = React.ComponentPropsWithoutRef<
+  typeof PopoverPrimitive.Content
+>;
 
 export function PopoverContent({
   className = '',

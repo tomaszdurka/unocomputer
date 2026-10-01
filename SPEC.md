@@ -7,12 +7,14 @@
 ## Core Requirements
 
 ### 1. Technology Stack
+
 - **Runtime**: Node.js
 - **Language**: TypeScript
 - **Framework**: NestJS
 - **CLI Integration**: Claude CLI (via `claude` command)
 
 ### 2. Key Features
+
 - Execute Claude CLI commands programmatically
 - Session management for conversation continuity
 - Workspaces: a managed folder created per run, or bound to any existing folder of the caller's (`POST /workspaces { directory }`)
@@ -26,9 +28,11 @@
 ## Session Management
 
 ### Overview
+
 Sessions enable conversation continuity across multiple runs. Each session belongs to a workspace and maintains context through Claude CLI's `--session-id` and `--resume` flags.
 
 ### How Sessions Work
+
 - **First run in session**: Uses `--session-id {sessionId}` to create a new Claude CLI conversation
 - **Subsequent runs**: Uses `--resume {sessionId}` to continue the conversation
 - Sessions are tied to workspaces for project isolation
@@ -38,6 +42,7 @@ Sessions enable conversation continuity across multiple runs. Each session belon
   named X" keeps that mapping itself.
 
 ### Session Lifecycle
+
 1. Create a session explicitly with `POST /sessions { workspaceId, name? }`, or implicitly by providing `workspaceId` in a run request
 2. Continue an existing session by providing `sessionId` in the run request
 3. Rename it any time with `PATCH /sessions/:sessionId { name }` (`null` clears the label)
@@ -49,18 +54,20 @@ Sessions enable conversation continuity across multiple runs. Each session belon
 ### Core Endpoints
 
 #### `POST /runs/queue`
+
 Queue a new run (returns immediately)
 
 **Request Body:**
+
 ```json
 {
-  "prompt": "string",           // Required
-  "schema": "object?",           // Optional JSON schema
-  "workspaceId": "string?",      // Creates new session in workspace
-  "sessionId": "string?",        // Continues existing session
-  "model": "string?",            // e.g. "claude:sonnet", "gemini", "codex"
-  "tags": ["string"],            // Optional caller labels, max 10
-  "env": { "KEY": "value" }      // Optional extra environment for the CLI process
+  "prompt": "string", // Required
+  "schema": "object?", // Optional JSON schema
+  "workspaceId": "string?", // Creates new session in workspace
+  "sessionId": "string?", // Continues existing session
+  "model": "string?", // e.g. "claude:sonnet", "gemini", "codex"
+  "tags": ["string"], // Optional caller labels, max 10
+  "env": { "KEY": "value" } // Optional extra environment for the CLI process
 }
 ```
 
@@ -69,6 +76,7 @@ a project's API keys, or how the agent reaches the caller back. Strings only; it
 never stored.
 
 **Response (201):**
+
 ```json
 {
   "runId": "uuid",
@@ -79,14 +87,17 @@ never stored.
 ```
 
 #### `POST /runs`
+
 Execute run and wait for completion (supports streaming)
 
 Same request body as `/runs/queue`, supports both buffered and streaming modes via `Accept` header.
 
 #### `GET /runs`
+
 List runs, newest first, **a page at a time**.
 
 **Query parameters:**
+
 - `page` - 1-based, default `1`
 - `pageSize` - default `100`, maximum `100`
 - `tag` - repeatable; a run must carry EVERY tag given (AND)
@@ -114,39 +125,45 @@ starting another one. Lowercase slugs (`[a-z0-9][a-z0-9._-]*`), at most 10 per
 run. Runs created without tags come back with `tags: []`.
 
 #### `GET /runs/:runId`
+
 Get run details with events and results
 
 #### `POST /sessions`
+
 Create a session in a workspace ahead of its first run.
 
 ```json
 {
-  "workspaceId": "string",       // Required
-  "name": "string?"              // Optional label, max 200 chars
+  "workspaceId": "string", // Required
+  "name": "string?" // Optional label, max 200 chars
 }
 ```
 
 201 with the session; 404 when the workspace does not exist.
 
 #### `GET /sessions`
+
 List sessions with workspace info, newest first, a page at a time. Takes `page` and
 `pageSize` and returns the same `{ items, total, page, pageSize }` envelope as
 `GET /runs`.
 
 #### `GET /sessions/:sessionId`
+
 Get session details with all runs
 
 #### `PATCH /sessions/:sessionId`
+
 Rename a session: `{ "name": "string | null" }`. 404 when it does not exist.
 
 #### `POST /workspaces`
+
 Create a workspace.
 
 ```json
 {
-  "directory": "string?",        // Absolute path of an EXISTING folder to bind to
+  "directory": "string?", // Absolute path of an EXISTING folder to bind to
   "name": "string?",
-  "agentsMd": "string?"          // Written to <workspace>/AGENTS.md when given
+  "agentsMd": "string?" // Written to <workspace>/AGENTS.md when given
 }
 ```
 
@@ -157,6 +174,7 @@ Create a workspace.
 - Without `directory`: a managed folder `{workspaceId}` is created under `WORKSPACES_DIR`.
 
 #### `GET /workspaces`
+
 List workspaces, newest first, a page at a time. Takes `page` and `pageSize` and
 returns the same `{ items, total, page, pageSize }` envelope as `GET /runs`.
 
@@ -166,14 +184,17 @@ before creating one. It comes back in the same envelope as the list, so a caller
 never has to branch on the response shape.
 
 #### `GET /workspaces/:workspaceId`
+
 Get workspace details with its `sessions` (newest first, including ones without a run yet) and `runs`
 
 #### `PATCH /workspaces/:workspaceId`
+
 Rename a workspace: `{ "name": "string | null" }`.
 
 ### Legacy Endpoint: `POST /runs/claude`
 
 #### Request Headers
+
 - `Content-Type: application/json`
 - `Accept: application/json` (default, buffered) or `application/x-ndjson` (streaming)
 
@@ -181,13 +202,14 @@ Rename a workspace: `{ "name": "string | null" }`.
 
 ```json
 {
-  "prompt": "string",           // Required: Claude CLI prompt
-  "schema": "object?",           // Optional: JSON schema for structured output
-  "workspaceId": "string?"       // Optional: UUID of existing workspace to reuse
+  "prompt": "string", // Required: Claude CLI prompt
+  "schema": "object?", // Optional: JSON schema for structured output
+  "workspaceId": "string?" // Optional: UUID of existing workspace to reuse
 }
 ```
 
 **Notes:**
+
 - No directory field on a run: the directory is the workspace's. Bind a workspace to a folder with `POST /workspaces`, then run with its `workspaceId`; with neither id, the run gets a managed workspace under `WORKSPACES_DIR`
 - No `stream` field — streaming is determined by the `Accept` header
 - Providing `workspaceId` allows reusing an existing workspace for continuity across runs
@@ -195,6 +217,7 @@ Rename a workspace: `{ "name": "string | null" }`.
 #### Example Requests
 
 **Buffered Mode (with schema):**
+
 ```bash
 curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
@@ -212,6 +235,7 @@ curl -X POST http://unocomputer.localhost/api/runs \
 ```
 
 **Streaming Mode (no schema):**
+
 ```bash
 curl -X POST http://unocomputer.localhost/api/runs \
   -H "Content-Type: application/json" \
@@ -226,12 +250,14 @@ curl -X POST http://unocomputer.localhost/api/runs \
 #### Buffered Mode (`Accept: application/json`)
 
 **Response Headers:**
+
 - `Content-Type: application/json`
 
 **Response Body:**
 The response returns the result object from Claude CLI's `type: "result"` event, along with workspace metadata.
 
 **Example Success Response:**
+
 ```json
 {
   "workspaceId": "abc-123-def-456",
@@ -247,6 +273,7 @@ The response returns the result object from Claude CLI's `type: "result"` event,
 #### Streaming Mode (`Accept: application/x-ndjson`)
 
 **Response Headers:**
+
 - `Content-Type: application/x-ndjson` (JSONL)
 - `Cache-Control: no-cache`
 
@@ -274,12 +301,14 @@ Each line is a JSON object representing an event:
 The workspaces directory location can be configured via environment variable:
 
 **Environment Variables:**
+
 - `WORKSPACES_DIR` - Where managed workspaces are created (optional)
 - Default: `./workspaces` (relative to project root)
 - `SESSIONS_DIR` - Where Uno keeps its own per-session CLI state (codex/gemini resume ids)
 - Default: `<repo-root>/data/sessions`, beside the database. Never a workspace folder.
 
 **Example:**
+
 ```bash
 # Use custom directory
 export WORKSPACES_DIR=/var/data/claude-workspaces
@@ -294,19 +323,23 @@ WORKSPACES_DIR=/var/data/claude-workspaces pm2 start "npm run start:dev" --name 
 A workspace is a directory the CLIs run in. It is either managed or bound:
 
 **Managed workspace:**
+
 - Created by `POST /workspaces` without `directory`, or by a run request with no `workspaceId`
 - Directory: `{WORKSPACES_DIR}/{workspaceId}/` where `workspaceId` is a UUID
 - Optional `AGENTS.md` written from the `agentsMd` parameter
 
 **Bound workspace (caller's folder):**
+
 - Created by `POST /workspaces { directory }` for an existing folder - a project checkout, a git worktree
 - Nothing is created there by Uno: no `CLAUDE.md`, no `.codex`/`.gemini` state. The agent reads the folder's own instruction files
 - One folder = one workspace (unique on the canonical path)
 
 **Reusing a workspace:**
+
 - Provide `workspaceId` in the run request (a new session), or `sessionId` (continue one)
 
 ### Directory Structure
+
 ```
 <WORKSPACES_DIR>/
 ├── abc-123-def-456/           # Managed workspace
@@ -330,6 +363,7 @@ Session state used to live at `<workspace>/.codex/<sessionId>` and
 ### Workspace State Files
 
 **AGENTS.md**:
+
 - Optional project guidelines and context
 - Created via `POST /workspaces` with `agentsMd` parameter
 - Controlled by API caller, not auto-generated
@@ -385,6 +419,7 @@ src/
      - `onLine`: Callback for each parsed JSON event (optional)
 
 **Key Features:**
+
 - Separate buffers for stdout and stderr to prevent data corruption
 - Buffers incomplete lines until newline is received
 - Error handling for malformed JSON
@@ -396,6 +431,7 @@ src/
 **Methods:**
 
 **`run(options): Promise<unknown>`**
+
 - Builds Claude CLI arguments with `--session-id` (first run) or `--resume` (subsequent runs)
 - Sets permission mode (`bypassPermissions`)
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment
@@ -411,16 +447,19 @@ src/
 **Command Construction:**
 
 Example first run:
+
 ```bash
 claude --session-id abc-123 -p "What is 2+2?" --output-format stream-json --verbose --permission-mode bypassPermissions
 ```
 
 Example subsequent run:
+
 ```bash
 claude --resume abc-123 -p "Continue the conversation" --output-format stream-json --verbose --permission-mode bypassPermissions
 ```
 
 With schema:
+
 ```bash
 claude --continue -p "What is 2+2?" --output-format stream-json --verbose --permission-mode bypassPermissions --json-schema '{"type":"object",...}'
 ```
@@ -444,9 +483,11 @@ claude --continue -p "What is 2+2?" --output-format stream-json --verbose --perm
 ## Dashboard UI
 
 ### Overview
+
 UnoComputer includes a Next.js 16 dashboard built with Turbopack for fast development and modern UI components using shadcn/ui.
 
 ### Features
+
 - **Runs Dashboard** - View all Claude CLI executions with real-time status updates
   - Filter by status, search by prompt
   - View detailed logs and results
@@ -467,11 +508,13 @@ UnoComputer includes a Next.js 16 dashboard built with Turbopack for fast develo
   - Create a named session in a workspace, then run prompts in it
 
 ### Navigation
+
 - Seamless cross-navigation between runs, sessions, and workspaces
 - Each list page includes quick links to related views
 - Detail pages include breadcrumb navigation
 
 ### Technology Stack
+
 - **Framework**: Next.js 16 with App Router
 - **Build Tool**: Turbopack (faster than Webpack)
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
@@ -479,6 +522,7 @@ UnoComputer includes a Next.js 16 dashboard built with Turbopack for fast develo
 - **Data Fetching**: Server-side rendering with React Server Components
 
 ### Development
+
 ```bash
 # Start UI dev server
 npm run dev:ui
@@ -514,12 +558,12 @@ keeps its unix socket under `~/Library/Application Support/<name>/`. The port is
 allocated automatically from 7800 up by scanning `$(brew --prefix)/etc/caddy.d`,
 which doubles as the registry shared with other apps deployed the same way.
 
-| | path |
-| --- | --- |
-| code | `~/Library/Application Support/<name>/{backend,admin}` |
-| database | `~/Library/Application Support/<name>/data/<name>.db` |
-| socket | `~/Library/Application Support/<name>/backend.sock` |
-| logs | `~/Library/Logs/<name>/` |
+|          | path                                                   |
+| -------- | ------------------------------------------------------ |
+| code     | `~/Library/Application Support/<name>/{backend,admin}` |
+| database | `~/Library/Application Support/<name>/data/<name>.db`  |
+| socket   | `~/Library/Application Support/<name>/backend.sock`    |
+| logs     | `~/Library/Logs/<name>/`                               |
 
 Dev runs on an OS-assigned port (`PORT=0`), so a deployment and a dev server never
 contend for the same number.
@@ -529,6 +573,7 @@ contend for the same number.
 ### Validation Errors (400)
 
 NestJS ValidationPipe automatically handles DTO validation:
+
 ```json
 {
   "statusCode": 400,
@@ -540,6 +585,7 @@ NestJS ValidationPipe automatically handles DTO validation:
 ### JSON Parsing Errors
 
 Malformed JSON lines are logged but don't crash the process:
+
 ```
 [RunsService] Failed to parse JSON: {incomplete json...
 ```
@@ -547,6 +593,7 @@ Malformed JSON lines are logged but don't crash the process:
 ### Spawn Errors
 
 If the Claude CLI fails to spawn:
+
 ```json
 {
   "statusCode": 500,
@@ -571,6 +618,7 @@ The `RunsService.executeJsonStream()` method implements robust line buffering:
 ### Configuration
 
 The application uses NestJS `ConfigModule` to handle environment variables:
+
 - Loads from `.env.local` file (gitignored) if present
 - Falls back to system environment variables
 - Used for `WORKSPACES_DIR` and `SESSIONS_DIR` configuration

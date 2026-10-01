@@ -22,7 +22,9 @@ export function defaultWorkspaceDir(
  */
 export function resolveCallerDirectory(input: string): string {
   if (!path.isAbsolute(input)) {
-    throw new BadRequestException(`directory must be an absolute path, got "${input}"`);
+    throw new BadRequestException(
+      `directory must be an absolute path, got "${input}"`,
+    );
   }
   let stat: fs.Stats;
   try {

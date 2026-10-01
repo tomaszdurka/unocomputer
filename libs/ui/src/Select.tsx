@@ -28,9 +28,15 @@ function ChevronDown() {
   );
 }
 
-type TriggerProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>;
+type TriggerProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Trigger
+>;
 
-export function SelectTrigger({ className = '', children, ...props }: TriggerProps) {
+export function SelectTrigger({
+  className = '',
+  children,
+  ...props
+}: TriggerProps) {
   return (
     <SelectPrimitive.Trigger
       className={`flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-500 focus:outline-none data-[placeholder]:text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-400 dark:data-[placeholder]:text-neutral-500 ${className}`}
@@ -44,9 +50,15 @@ export function SelectTrigger({ className = '', children, ...props }: TriggerPro
   );
 }
 
-type ContentProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>;
+type ContentProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Content
+>;
 
-export function SelectContent({ className = '', children, ...props }: ContentProps) {
+export function SelectContent({
+  className = '',
+  children,
+  ...props
+}: ContentProps) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -55,7 +67,9 @@ export function SelectContent({ className = '', children, ...props }: ContentPro
         className={`z-50 max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900 ${className}`}
         {...props}
       >
-        <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
+        <SelectPrimitive.Viewport className="p-1">
+          {children}
+        </SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );
@@ -83,5 +97,7 @@ export function SelectLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function SelectSeparator() {
-  return <SelectPrimitive.Separator className="my-1 h-px bg-gray-200 dark:bg-neutral-800" />;
+  return (
+    <SelectPrimitive.Separator className="my-1 h-px bg-gray-200 dark:bg-neutral-800" />
+  );
 }

@@ -3,8 +3,12 @@ import SessionDetailView from '#/components/sessions/SessionDetailView';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SessionDetailPage({ params }: { params: Promise<{ sessionId: string }> }) {
-  const {sessionId} = await params
+export default async function SessionDetailPage({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}) {
+  const { sessionId } = await params;
   const session = await getSession(sessionId);
 
   return (

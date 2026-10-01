@@ -34,7 +34,12 @@ export function SettingsSidebar({
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {items.map((item) => (
-          <NavItem key={item.href} href={item.href} icon={item.icon} match="prefix">
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            match="prefix"
+          >
             {item.label}
           </NavItem>
         ))}

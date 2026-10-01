@@ -20,13 +20,17 @@ export default function GeneralSettingsPage() {
           <dd className="text-sm font-medium">/api (proxied to unix socket)</dd>
         </div>
         <div className="flex items-center justify-between px-4 py-3">
-          <dt className="text-sm text-gray-500 dark:text-neutral-400">Workspaces</dt>
+          <dt className="text-sm text-gray-500 dark:text-neutral-400">
+            Workspaces
+          </dt>
           <dd className="text-sm font-medium">
             {process.env.WORKSPACES_DIR ?? './workspaces'}
           </dd>
         </div>
         <div className="flex items-center justify-between px-4 py-3">
-          <dt className="text-sm text-gray-500 dark:text-neutral-400">Environment</dt>
+          <dt className="text-sm text-gray-500 dark:text-neutral-400">
+            Environment
+          </dt>
           <dd className="text-sm font-medium">{process.env.NODE_ENV}</dd>
         </div>
       </dl>

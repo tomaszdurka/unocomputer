@@ -6,7 +6,7 @@ export class UpdateWorkspaceDto {
     description: 'Workspace name',
     required: false,
     nullable: true,
-    example: 'My Project Workspace'
+    example: 'My Project Workspace',
   })
   @IsString()
   @IsOptional()

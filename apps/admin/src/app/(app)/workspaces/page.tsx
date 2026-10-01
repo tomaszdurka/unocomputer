@@ -14,13 +14,18 @@ export default async function WorkspacesPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page } = await searchParams;
-  let workspaces: Paginated<Workspace> = { items: [], total: 0, page: 1, pageSize: PAGE_SIZE };
+  let workspaces: Paginated<Workspace> = {
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: PAGE_SIZE,
+  };
   let error = null;
 
   try {
     workspaces = await listWorkspaces(pageFromSearchParams(page));
   } catch (err: unknown) {
-    error = (err instanceof Error ? err.message : String(err));
+    error = err instanceof Error ? err.message : String(err);
   }
 
   return (
@@ -31,8 +36,12 @@ export default async function WorkspacesPage({
       </div>
       {error ? (
         <div className="rounded-lg border bg-rose-50 dark:bg-rose-950/40 p-6">
-          <div className="text-rose-900 dark:text-rose-300 font-semibold">Error loading workspaces</div>
-          <div className="text-sm text-rose-700 dark:text-rose-400 mt-2">{error}</div>
+          <div className="text-rose-900 dark:text-rose-300 font-semibold">
+            Error loading workspaces
+          </div>
+          <div className="text-sm text-rose-700 dark:text-rose-400 mt-2">
+            {error}
+          </div>
         </div>
       ) : (
         <WorkspacesListView workspaces={workspaces} />

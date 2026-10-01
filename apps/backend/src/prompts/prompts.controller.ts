@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prompt } from '../database/types';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { PromptDto } from '../database/dto';
@@ -23,7 +32,11 @@ export class PromptsController {
 
   @Get()
   @ApiOperation({ summary: 'List all prompts' })
-  @ApiResponse({ status: 200, description: 'List of prompts', type: [PromptDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'List of prompts',
+    type: [PromptDto],
+  })
   async listPrompts(): Promise<Prompt[]> {
     return await this.persistence.findAllPrompts();
   }
@@ -48,7 +61,7 @@ export class PromptsController {
   @ApiResponse({ status: 404, description: 'Prompt not found' })
   async updatePrompt(
     @Param('promptId') promptId: string,
-    @Body() dto: UpdatePromptDto
+    @Body() dto: UpdatePromptDto,
   ): Promise<Prompt> {
     const prompt = await this.persistence.updatePrompt({
       promptId,
@@ -65,7 +78,9 @@ export class PromptsController {
   @ApiParam({ name: 'promptId' })
   @ApiResponse({ status: 200, description: 'Prompt deleted' })
   @ApiResponse({ status: 404, description: 'Prompt not found' })
-  async deletePrompt(@Param('promptId') promptId: string): Promise<{ success: boolean }> {
+  async deletePrompt(
+    @Param('promptId') promptId: string,
+  ): Promise<{ success: boolean }> {
     const success = await this.persistence.deletePrompt({ promptId });
     if (!success) {
       throw new NotFoundException(`Prompt ${promptId} not found`);

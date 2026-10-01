@@ -18,7 +18,7 @@ const nextConfig = {
   transpilePackages: ['@app/ui'],
 
   // Default is bottom-left, where it sits on top of the sidebar's pinned Settings item.
-  devIndicators: { position: 'bottom-right' }
+  devIndicators: { position: 'bottom-right' },
 };
 
 export default nextConfig;

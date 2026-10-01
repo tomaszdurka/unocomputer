@@ -27,4 +27,9 @@ export async function createHttpTestApp(options: {
 }
 
 /** An empty page, the shape every list endpoint returns. */
-export const emptyPage = (page = 1, pageSize = 100) => ({ items: [], total: 0, page, pageSize });
+export const emptyPage = (page = 1, pageSize = 100) => ({
+  items: [],
+  total: 0,
+  page,
+  pageSize,
+});

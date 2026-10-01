@@ -37,11 +37,11 @@ There is only ever **one** port, and the browser only ever talks to the admin.
 The backend binds no TCP port at all: it listens on the unix socket
 `data/backend.sock`, and the admin proxies `/api/*` to it.
 
-| | URL |
-| --- | --- |
-| Dev | OS-assigned - `pnpm dev` prints `- Local: http://localhost:<port>` |
-| Deployed | http://unocomputer.localhost (Caddy -> 127.0.0.1:7802) |
-| API docs | `<base>/api` (swagger UI), `<base>/api/openapi.json` (raw spec) |
+|          | URL                                                                |
+| -------- | ------------------------------------------------------------------ |
+| Dev      | OS-assigned - `pnpm dev` prints `- Local: http://localhost:<port>` |
+| Deployed | http://unocomputer.localhost (Caddy -> 127.0.0.1:7802)             |
+| API docs | `<base>/api` (swagger UI), `<base>/api/openapi.json` (raw spec)    |
 
 Dev deliberately defaults to `PORT=0` so it never collides with another
 checkout, worktree, or a running deployment. Pin it with `PORT=4100 pnpm dev`

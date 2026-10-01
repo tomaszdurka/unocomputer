@@ -49,7 +49,13 @@ export const base = [
     // Test doubles stand in for types we deliberately do not reconstruct - a fake Prisma
     // client, a fetch stub. Requiring precise types there buys nothing and makes the
     // fakes harder to read than the code they are testing.
-    files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', '**/test/**'],
+    files: [
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/test/**',
+    ],
     languageOptions: { globals: { ...globals.jest, ...globals.node } },
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },

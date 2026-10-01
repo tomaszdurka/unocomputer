@@ -26,7 +26,10 @@ const run = (over: Partial<Run> = {}): Run => ({
 
 describe('summariseSessions', () => {
   it('lists a session that has no run yet as idle, dated by its creation', () => {
-    const [row] = summariseSessions({ sessions: [session({ name: 'fresh' })], runs: [] });
+    const [row] = summariseSessions({
+      sessions: [session({ name: 'fresh' })],
+      runs: [],
+    });
     expect(row).toEqual({
       sessionId: 's1',
       name: 'fresh',
@@ -40,12 +43,28 @@ describe('summariseSessions', () => {
     const rows = summariseSessions({
       sessions: [session()],
       runs: [
-        run({ runId: 'r1', status: 'success', startedAt: '2026-01-02T00:00:00Z' }),
-        run({ runId: 'r2', status: 'failure', startedAt: '2026-01-03T00:00:00Z' }),
-        run({ runId: 'r3', status: 'running', startedAt: '2026-01-01T12:00:00Z' }),
+        run({
+          runId: 'r1',
+          status: 'success',
+          startedAt: '2026-01-02T00:00:00Z',
+        }),
+        run({
+          runId: 'r2',
+          status: 'failure',
+          startedAt: '2026-01-03T00:00:00Z',
+        }),
+        run({
+          runId: 'r3',
+          status: 'running',
+          startedAt: '2026-01-01T12:00:00Z',
+        }),
       ],
     });
-    expect(rows[0]).toMatchObject({ status: 'running', runCount: 3, lastUsed: '2026-01-03T00:00:00Z' });
+    expect(rows[0]).toMatchObject({
+      status: 'running',
+      runCount: 3,
+      lastUsed: '2026-01-03T00:00:00Z',
+    });
   });
 
   it('ranks failure above stopped above success', () => {
@@ -62,9 +81,20 @@ describe('summariseSessions', () => {
   it('still shows a session the API only sent through a run', () => {
     const rows = summariseSessions({
       sessions: undefined,
-      runs: [run({ session: session({ sessionId: 's9', name: 'via-run' }), sessionId: 's9' })],
+      runs: [
+        run({
+          session: session({ sessionId: 's9', name: 'via-run' }),
+          sessionId: 's9',
+        }),
+      ],
     });
-    expect(rows).toEqual([expect.objectContaining({ sessionId: 's9', name: 'via-run', runCount: 1 })]);
+    expect(rows).toEqual([
+      expect.objectContaining({
+        sessionId: 's9',
+        name: 'via-run',
+        runCount: 1,
+      }),
+    ]);
   });
 
   it('puts the most recently active session first', () => {

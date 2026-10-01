@@ -3,11 +3,26 @@
 import Link from 'next/link';
 import type { Run, RunEvent } from '#/lib/types';
 import { useMemo, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@app/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@app/ui/select';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
 import { queueRun } from '#/lib/api';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Separator } from '@app/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Separator,
+} from '@app/ui';
 
 function formatElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -28,10 +43,14 @@ function elapsedForRun(run: Run) {
 }
 
 function statusBadgeClass(status: string) {
-  if (status === 'success') return 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
-  if (status === 'running') return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900';
-  if (status === 'failure') return 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900';
-  if (status === 'stopped') return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
+  if (status === 'success')
+    return 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
+  if (status === 'running')
+    return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900';
+  if (status === 'failure')
+    return 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900';
+  if (status === 'stopped')
+    return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
   return 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 }
 
@@ -41,10 +60,16 @@ function EventRow({ event }: { event: RunEvent }) {
   let payloadObj = null;
 
   try {
-    payloadObj = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
-    payloadPreview = typeof event.payload === 'string'
-      ? (event.payload.length > 200 ? event.payload.slice(0, 200) + '...' : event.payload)
-      : JSON.stringify(payloadObj, null, 2).slice(0, 200);
+    payloadObj =
+      typeof event.payload === 'string'
+        ? JSON.parse(event.payload)
+        : event.payload;
+    payloadPreview =
+      typeof event.payload === 'string'
+        ? event.payload.length > 200
+          ? event.payload.slice(0, 200) + '...'
+          : event.payload
+        : JSON.stringify(payloadObj, null, 2).slice(0, 200);
   } catch {
     payloadPreview = String(event.payload ?? '').slice(0, 200);
   }
@@ -57,7 +82,10 @@ function EventRow({ event }: { event: RunEvent }) {
         onClick={() => setOpen((x) => !x)}
       >
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-neutral-400">
-          <Badge variant="outline" className="bg-indigo-100 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
+          <Badge
+            variant="outline"
+            className="bg-indigo-100 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900"
+          >
             {event.type}
           </Badge>
           <span>{event.createdAt}</span>
@@ -65,7 +93,9 @@ function EventRow({ event }: { event: RunEvent }) {
         </div>
         {payloadPreview ? (
           <div className="mt-2">
-            <pre className="whitespace-pre-wrap break-words text-xs text-gray-500 dark:text-neutral-400">{payloadPreview}</pre>
+            <pre className="whitespace-pre-wrap break-words text-xs text-gray-500 dark:text-neutral-400">
+              {payloadPreview}
+            </pre>
           </div>
         ) : null}
         {open && payloadObj ? (
@@ -90,7 +120,15 @@ export default function RunDetailView({ run }: { run: Run }) {
   const promptLines = (run.prompt || '').split('\n').length;
   const isLongPrompt = promptLines > 5;
 
-  const handleContinueSession = async ({ prompt, schema, model }: { prompt: string; schema?: unknown; model?: string }) => {
+  const handleContinueSession = async ({
+    prompt,
+    schema,
+    model,
+  }: {
+    prompt: string;
+    schema?: unknown;
+    model?: string;
+  }) => {
     return await queueRun({
       prompt,
       schema,
@@ -107,7 +145,11 @@ export default function RunDetailView({ run }: { run: Run }) {
   const filteredEvents = useMemo(() => {
     const q = query.trim().toLowerCase();
     return [...events]
-      .sort((a, b) => (Date.parse(a.createdAt ?? '') || 0) - (Date.parse(b.createdAt ?? '') || 0))
+      .sort(
+        (a, b) =>
+          (Date.parse(a.createdAt ?? '') || 0) -
+          (Date.parse(b.createdAt ?? '') || 0),
+      )
       .filter((event) => {
         if (typeFilter !== 'all' && event.type !== typeFilter) return false;
         if (!q) return true;
@@ -123,10 +165,7 @@ export default function RunDetailView({ run }: { run: Run }) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Run Metadata</CardTitle>
             {run.session?.sessionId && (
-              <Button
-                onClick={() => setShowContinueDialog(true)}
-                size="sm"
-              >
+              <Button onClick={() => setShowContinueDialog(true)} size="sm">
                 <Play className="h-4 w-4 mr-2" />
                 Continue Session
               </Button>
@@ -146,7 +185,10 @@ export default function RunDetailView({ run }: { run: Run }) {
             <span className="grid-label">Workspace:</span>{' '}
             <span className="ml-2">
               {run.workspace ? (
-                <Link href={`/workspaces/${run.workspace.workspaceId}`} className="text-mint hover:underline font-mono text-xs">
+                <Link
+                  href={`/workspaces/${run.workspace.workspaceId}`}
+                  className="text-mint hover:underline font-mono text-xs"
+                >
                   {run.workspace.name || run.workspace.workspaceId}
                 </Link>
               ) : (
@@ -170,18 +212,24 @@ export default function RunDetailView({ run }: { run: Run }) {
             </span>
           </p>
           <p>
-            <span className="grid-label">Exit Code:</span> <span className="ml-2">{run.exitCode ?? '-'}</span>
+            <span className="grid-label">Exit Code:</span>{' '}
+            <span className="ml-2">{run.exitCode ?? '-'}</span>
           </p>
           <p>
-            <span className="grid-label">Elapsed:</span> <span className="ml-2">{elapsedForRun(run)}</span>
+            <span className="grid-label">Elapsed:</span>{' '}
+            <span className="ml-2">{elapsedForRun(run)}</span>
           </p>
           <p>
             <span className="grid-label">Started:</span>{' '}
-            <span className="ml-2 text-gray-500 dark:text-neutral-400">{run.startedAt}</span>
+            <span className="ml-2 text-gray-500 dark:text-neutral-400">
+              {run.startedAt}
+            </span>
           </p>
           <p>
             <span className="grid-label">Completed:</span>{' '}
-            <span className="ml-2 text-gray-500 dark:text-neutral-400">{run.completedAt ?? '-'}</span>
+            <span className="ml-2 text-gray-500 dark:text-neutral-400">
+              {run.completedAt ?? '-'}
+            </span>
           </p>
           {run.outputSchema ? (
             <>
@@ -205,7 +253,9 @@ export default function RunDetailView({ run }: { run: Run }) {
           <div>
             <p className="grid-label mb-2">Prompt</p>
             <div className="relative">
-              <p className={`whitespace-pre-wrap text-sm ${!isPromptExpanded && isLongPrompt ? 'line-clamp-5' : ''}`}>
+              <p
+                className={`whitespace-pre-wrap text-sm ${!isPromptExpanded && isLongPrompt ? 'line-clamp-5' : ''}`}
+              >
                 {run.prompt || 'No prompt'}
               </p>
               {isLongPrompt && !isPromptExpanded && (
@@ -238,7 +288,9 @@ export default function RunDetailView({ run }: { run: Run }) {
               </pre>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-neutral-400">No result available.</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              No result available.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -279,7 +331,9 @@ export default function RunDetailView({ run }: { run: Run }) {
               <EventRow key={event.id} event={event} />
             ))}
             {filteredEvents.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-neutral-400">No events match current filters.</p>
+              <p className="text-sm text-gray-500 dark:text-neutral-400">
+                No events match current filters.
+              </p>
             ) : null}
           </div>
         </CardContent>

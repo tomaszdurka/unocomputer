@@ -1,47 +1,49 @@
-import {Injectable, Logger} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CliEvent } from '../lib/json';
-import path from "node:path";
-import * as fs from "node:fs";
+import path from 'node:path';
+import * as fs from 'node:fs';
 import { Session, Workspace } from '../database/types';
-import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
-import {RunOptions, RunResult} from "../runs/dto/run-options";
-import {readFileSync} from "fs";
-import {execSync} from "node:child_process";
-import {providerSessionDir} from '../lib/session-storage';
+import { executeCommandWithJsonStreamOutput } from '../lib/executeCommandWithJsonStreamOutput';
+import { RunOptions, RunResult } from '../runs/dto/run-options';
+import { readFileSync } from 'fs';
+import { execSync } from 'node:child_process';
+import { providerSessionDir } from '../lib/session-storage';
 
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
 
   async run(options: RunOptions): Promise<RunResult> {
-    const {run, session, workspace} = options;
-    const {runId, prompt, outputSchema} = run;
+    const { run, session, workspace } = options;
+    const { runId, prompt, outputSchema } = run;
 
     // Ensure run directory exist
-    const runPath = path.join(this.getSessionDirectory(session, workspace), runId);
-    fs.mkdirSync(runPath, {recursive: true});
+    const runPath = path.join(
+      this.getSessionDirectory(session, workspace),
+      runId,
+    );
+    fs.mkdirSync(runPath, { recursive: true });
 
     // Check for existing codex session
     const geminiSessionId = this.retrieveGeminiSessionId(session, workspace);
-    const sessionMarker = geminiSessionId ? '' : `[SESSION-ID=${session.sessionId}]\n`
-    let enhancedPrompt = `${sessionMarker}${prompt}`
+    const sessionMarker = geminiSessionId
+      ? ''
+      : `[SESSION-ID=${session.sessionId}]\n`;
+    let enhancedPrompt = `${sessionMarker}${prompt}`;
 
     if (outputSchema) {
-      enhancedPrompt = `${enhancedPrompt}\n\nIMPORTANT: Wrap result in <STRUCTURED>...</STRUCTURED> as structured output using following JSON schema: ${JSON.stringify(outputSchema)}`
+      enhancedPrompt = `${enhancedPrompt}\n\nIMPORTANT: Wrap result in <STRUCTURED>...</STRUCTURED> as structured output using following JSON schema: ${JSON.stringify(outputSchema)}`;
     }
 
     const args = [];
 
     if (geminiSessionId) {
-      args.push(
-          '--resume',
-          geminiSessionId,
-      )
+      args.push('--resume', geminiSessionId);
     }
 
     args.push(
       '--prompt',
-        enhancedPrompt,
+      enhancedPrompt,
       '--output-format',
       'stream-json',
       '--yolo',
@@ -51,8 +53,8 @@ export class GeminiService {
     const env = { ...process.env, ...options.env };
     this.logger.log(`gemini ${args.join(' ')}`);
 
-    const assistantMessages: string[] = []
-    let assistantMessageBuffer = ''
+    const assistantMessages: string[] = [];
+    let assistantMessageBuffer = '';
     await executeCommandWithJsonStreamOutput({
       command: 'gemini',
       args,
@@ -81,8 +83,8 @@ export class GeminiService {
         try {
           structuredResult = JSON.parse(resultString);
         } catch {
-      // Best effort: a missing or malformed session file just means no id to resume.
-    }
+          // Best effort: a missing or malformed session file just means no id to resume.
+        }
       }
     }
 
@@ -98,7 +100,7 @@ export class GeminiService {
     // Find gemini session id, but searching for special file
     const geminiSessionPath = path.join(sessionPath, 'session-id');
     if (fs.existsSync(geminiSessionPath)) {
-      return readFileSync(geminiSessionPath).toString()
+      return readFileSync(geminiSessionPath).toString();
     }
     return null;
   }
@@ -110,7 +112,7 @@ export class GeminiService {
     // Find gemini session id, but searching for special session-marker
     try {
       const cmd = `find ~/.gemini/tmp -name "*.json" -exec grep -lF "[SESSION-ID=${session.sessionId}]" {} + | xargs grep -m 1 "sessionId" | sed -E 's/.*"sessionId":[[:space:]]*"([^"]+)".*/\\1/' | head -n 1`;
-      const geminiSessionId = execSync(cmd, {encoding: 'utf8'}).trim();
+      const geminiSessionId = execSync(cmd, { encoding: 'utf8' }).trim();
       if (geminiSessionId) {
         fs.writeFileSync(geminiSessionPath, geminiSessionId);
         return geminiSessionId;
@@ -125,5 +127,4 @@ export class GeminiService {
   getSessionDirectory(session: Session, workspace: Workspace) {
     return providerSessionDir('gemini', session, workspace);
   }
-
 }

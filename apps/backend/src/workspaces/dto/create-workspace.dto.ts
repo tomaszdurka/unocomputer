@@ -8,7 +8,7 @@ export class CreateWorkspaceDto {
       'managed folder under WORKSPACES_DIR. 400 when the path is relative, missing or ' +
       'not a directory; 409 when a workspace already exists for it.',
     required: false,
-    example: '/Users/me/projects/app'
+    example: '/Users/me/projects/app',
   })
   @IsString()
   @IsNotEmpty()
@@ -18,7 +18,7 @@ export class CreateWorkspaceDto {
   @ApiProperty({
     description: 'Workspace name',
     required: false,
-    example: 'My Project Workspace'
+    example: 'My Project Workspace',
   })
   @IsString()
   @IsOptional()
@@ -27,7 +27,7 @@ export class CreateWorkspaceDto {
   @ApiProperty({
     description: 'AGENTS.md content to create in workspace',
     required: false,
-    example: '# Project Guidelines\n\nWrite clean code...'
+    example: '# Project Guidelines\n\nWrite clean code...',
   })
   @IsString()
   @IsOptional()

@@ -16,12 +16,18 @@ describe('NewSessionDialog', () => {
   it('creates a named session in the workspace and opens it', async () => {
     create.mockResolvedValue({ sessionId: 's1' } as never);
     const onOpenChange = jest.fn();
-    render(<NewSessionDialog open onOpenChange={onOpenChange} workspaceId="w1" />);
+    render(
+      <NewSessionDialog open onOpenChange={onOpenChange} workspaceId="w1" />,
+    );
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'first' } });
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'first' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 
-    await waitFor(() => expect(create).toHaveBeenCalledWith({ workspaceId: 'w1', name: 'first' }));
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith({ workspaceId: 'w1', name: 'first' }),
+    );
     expect(routerMock.push).toHaveBeenCalledWith('/sessions/s1');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
@@ -32,7 +38,12 @@ describe('NewSessionDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 
-    await waitFor(() => expect(create).toHaveBeenCalledWith({ workspaceId: 'w1', name: undefined }));
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith({
+        workspaceId: 'w1',
+        name: undefined,
+      }),
+    );
   });
 
   it('shows the backend message when creation fails', async () => {

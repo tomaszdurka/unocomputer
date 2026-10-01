@@ -48,14 +48,18 @@ function parseJson(text: string): unknown {
 
 const isServer = typeof window === 'undefined';
 
-async function serverRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function serverRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const [{ default: http }, { resolve }] = await Promise.all([
     import('node:http'),
     import('node:path'),
   ]);
 
   const socketPath =
-    process.env.BACKEND_SOCKET ?? resolve(process.cwd(), '../../data/backend.sock');
+    process.env.BACKEND_SOCKET ??
+    resolve(process.cwd(), '../../data/backend.sock');
 
   return new Promise<T>((resolvePromise, reject) => {
     const req = http.request(
@@ -83,13 +87,18 @@ async function serverRequest<T>(path: string, options: RequestOptions = {}): Pro
         });
       },
     );
-    req.on('error', (err) => reject(new Error(`Backend unavailable: ${err.message}`)));
+    req.on('error', (err) =>
+      reject(new Error(`Backend unavailable: ${err.message}`)),
+    );
     if (options.body) req.write(options.body);
     req.end();
   });
 }
 
-async function browserRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function browserRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const res = await fetch(`/api${path}`, { cache: 'no-store', ...options });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
@@ -99,7 +108,9 @@ async function browserRequest<T>(path: string, options: RequestOptions = {}): Pr
 }
 
 function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  return isServer ? serverRequest<T>(path, options) : browserRequest<T>(path, options);
+  return isServer
+    ? serverRequest<T>(path, options)
+    : browserRequest<T>(path, options);
 }
 
 export async function listRuns(page = 1): Promise<Paginated<Run>> {
@@ -118,31 +129,47 @@ export async function getWorkspace(workspaceId: string): Promise<Workspace> {
   return request<Workspace>(`/workspaces/${workspaceId}`);
 }
 
-export async function createWorkspace(data: { directory?: string; name?: string; agentsMd?: string }): Promise<Workspace> {
+export async function createWorkspace(data: {
+  directory?: string;
+  name?: string;
+  agentsMd?: string;
+}): Promise<Workspace> {
   return request('/workspaces', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export async function updateWorkspace(workspaceId: string, data: { name?: string | null }): Promise<Workspace> {
+export async function updateWorkspace(
+  workspaceId: string,
+  data: { name?: string | null },
+): Promise<Workspace> {
   return request(`/workspaces/${workspaceId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export async function getWorkspaceFile(workspaceId: string, filename: string): Promise<{ content: string }> {
+export async function getWorkspaceFile(
+  workspaceId: string,
+  filename: string,
+): Promise<{ content: string }> {
   return request(`/workspaces/${workspaceId}/files/${filename}`);
 }
 
-export async function queueRun(data: { prompt: string; schema?: unknown; model?: string; workspaceId?: string; sessionId?: string }): Promise<Run> {
+export async function queueRun(data: {
+  prompt: string;
+  schema?: unknown;
+  model?: string;
+  workspaceId?: string;
+  sessionId?: string;
+}): Promise<Run> {
   return request('/runs/queue', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
@@ -154,19 +181,25 @@ export async function getSession(sessionId: string): Promise<Session> {
   return request<Session>(`/sessions/${sessionId}`);
 }
 
-export async function createSession(data: { workspaceId: string; name?: string }): Promise<Session> {
+export async function createSession(data: {
+  workspaceId: string;
+  name?: string;
+}): Promise<Session> {
   return request('/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export async function updateSession(sessionId: string, data: { name?: string | null }): Promise<Session> {
+export async function updateSession(
+  sessionId: string,
+  data: { name?: string | null },
+): Promise<Session> {
   return request(`/sessions/${sessionId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
@@ -178,24 +211,31 @@ export async function getPrompt(promptId: string): Promise<Prompt> {
   return request<Prompt>(`/prompts/${promptId}`);
 }
 
-export async function createPrompt(data: { name: string; description?: string; prompt: string }): Promise<Prompt> {
+export async function createPrompt(data: {
+  name: string;
+  description?: string;
+  prompt: string;
+}): Promise<Prompt> {
   return request('/prompts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export async function updatePrompt(promptId: string, data: { name?: string; description?: string | null; prompt?: string }): Promise<Prompt> {
+export async function updatePrompt(
+  promptId: string,
+  data: { name?: string; description?: string | null; prompt?: string },
+): Promise<Prompt> {
   return request(`/prompts/${promptId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
 export async function deletePrompt(promptId: string): Promise<void> {
   return request(`/prompts/${promptId}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }

@@ -11,7 +11,12 @@ type NavItemProps = {
   match?: 'exact' | 'prefix';
 };
 
-export function NavItem({ href, icon, children, match = 'exact' }: NavItemProps) {
+export function NavItem({
+  href,
+  icon,
+  children,
+  match = 'exact',
+}: NavItemProps) {
   const pathname = usePathname();
   const active =
     match === 'prefix'
@@ -28,7 +33,9 @@ export function NavItem({ href, icon, children, match = 'exact' }: NavItemProps)
           : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
       }`}
     >
-      {icon ? <span className="size-4 shrink-0 [&>svg]:size-4">{icon}</span> : null}
+      {icon ? (
+        <span className="size-4 shrink-0 [&>svg]:size-4">{icon}</span>
+      ) : null}
       <span className="truncate">{children}</span>
     </Link>
   );

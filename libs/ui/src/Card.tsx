@@ -13,7 +13,12 @@ export function Card({ className = '', ...props }: DivProps) {
 }
 
 export function CardHeader({ className = '', ...props }: DivProps) {
-  return <div className={`flex flex-col gap-1.5 px-6 py-4 ${className}`} {...props} />;
+  return (
+    <div
+      className={`flex flex-col gap-1.5 px-6 py-4 ${className}`}
+      {...props}
+    />
+  );
 }
 
 export function CardTitle({ className = '', ...props }: DivProps) {

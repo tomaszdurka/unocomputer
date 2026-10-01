@@ -13,7 +13,11 @@ export class WorkspaceDto {
   @ApiProperty({ description: 'Workspace directory path' })
   workingDir!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, description: 'Workspace name' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Workspace name',
+  })
   name!: string | null;
 
   @ApiProperty({ description: 'Workspace creation timestamp' })
@@ -22,10 +26,16 @@ export class WorkspaceDto {
   @ApiProperty({ description: 'Workspace last update timestamp' })
   updatedAt!: Date;
 
-  @ApiPropertyOptional({ type: () => [RunDto], description: 'Runs in this workspace' })
+  @ApiPropertyOptional({
+    type: () => [RunDto],
+    description: 'Runs in this workspace',
+  })
   runs?: RunDto[];
 
-  @ApiPropertyOptional({ type: () => [SessionDto], description: 'Sessions in this workspace' })
+  @ApiPropertyOptional({
+    type: () => [SessionDto],
+    description: 'Sessions in this workspace',
+  })
   sessions?: SessionDto[];
 }
 
@@ -33,7 +43,11 @@ export class SessionDto {
   @ApiProperty({ description: 'Session unique identifier' })
   sessionId!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, description: 'Session label' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Session label',
+  })
   name!: string | null;
 
   @ApiProperty({ description: 'Session creation timestamp' })
@@ -48,7 +62,10 @@ export class SessionDto {
   @ApiPropertyOptional({ type: () => WorkspaceDto })
   workspace?: WorkspaceDto;
 
-  @ApiPropertyOptional({ type: () => [RunDto], description: 'All runs in this session' })
+  @ApiPropertyOptional({
+    type: () => [RunDto],
+    description: 'All runs in this session',
+  })
   runs?: RunDto[];
 }
 
@@ -83,7 +100,11 @@ export class RunDto {
   @ApiProperty({ description: 'The prompt that was executed' })
   prompt!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, description: 'Model used' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Model used',
+  })
   model!: string | null;
 
   @ApiPropertyOptional({
@@ -111,7 +132,11 @@ export class RunDto {
   })
   result?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ type: Number, nullable: true, description: 'Process exit code' })
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    description: 'Process exit code',
+  })
   exitCode!: number | null;
 
   @ApiProperty({ description: 'Run start timestamp' })
@@ -135,7 +160,10 @@ export class RunDto {
   @ApiPropertyOptional({ type: () => WorkspaceDto })
   workspace?: WorkspaceDto;
 
-  @ApiPropertyOptional({ type: () => [RunEventDto], description: 'All events from the run' })
+  @ApiPropertyOptional({
+    type: () => [RunEventDto],
+    description: 'All events from the run',
+  })
   events?: RunEventDto[];
 }
 

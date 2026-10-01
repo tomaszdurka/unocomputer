@@ -31,5 +31,12 @@ export default function PagePagination({
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
-  return <Pagination page={page} pageSize={pageSize} total={total} onPageChange={goTo} />;
+  return (
+    <Pagination
+      page={page}
+      pageSize={pageSize}
+      total={total}
+      onPageChange={goTo}
+    />
+  );
 }

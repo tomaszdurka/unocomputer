@@ -8,11 +8,19 @@ import { listPrompts, createPrompt, deletePrompt } from '#/lib/api';
 import { BookmarkPlus, Plus, Trash2 } from 'lucide-react';
 import { Button, Input } from '@app/ui';
 
-export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt) => void }) {
+export default function PromptSelector({
+  onSelect,
+}: {
+  onSelect: (prompt: Prompt) => void;
+}) {
   const [prompts, setPrompts] = useState<Prompt[] | null>(null);
   const [open, setOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newPrompt, setNewPrompt] = useState({ name: '', description: '', prompt: '' });
+  const [newPrompt, setNewPrompt] = useState({
+    name: '',
+    description: '',
+    prompt: '',
+  });
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -22,8 +30,6 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
       console.error('Failed to load prompts:', err);
     }
   }, []);
-
-
 
   const handleCreatePrompt = async () => {
     if (!newPrompt.name.trim() || !newPrompt.prompt.trim()) {
@@ -77,11 +83,14 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
             Browse Saved
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-2 max-h-[400px] overflow-y-auto" align="end">
+        <PopoverContent
+          className="w-80 p-2 max-h-[400px] overflow-y-auto"
+          align="end"
+        >
           <div className="space-y-2">
             <div className="flex items-center justify-between px-2 py-1">
               <span className="text-xs font-semibold text-gray-500 dark:text-neutral-400">
-                {(prompts?.length ?? 0)} saved
+                {prompts?.length ?? 0} saved
               </span>
               <Button
                 size="sm"
@@ -97,9 +106,13 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
               </Button>
             </div>
             {prompts === null ? (
-              <p className="text-center py-4 text-xs text-gray-500 dark:text-neutral-400">Loading...</p>
+              <p className="text-center py-4 text-xs text-gray-500 dark:text-neutral-400">
+                Loading...
+              </p>
             ) : (prompts?.length ?? 0) === 0 ? (
-              <p className="text-center py-4 text-xs text-gray-500 dark:text-neutral-400">No saved prompts</p>
+              <p className="text-center py-4 text-xs text-gray-500 dark:text-neutral-400">
+                No saved prompts
+              </p>
             ) : (
               (prompts ?? []).map((prompt) => (
                 <div
@@ -109,7 +122,9 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate">{prompt.name}</p>
+                      <p className="text-xs font-semibold truncate">
+                        {prompt.name}
+                      </p>
                       {prompt.description && (
                         <p className="text-[11px] text-gray-500 dark:text-neutral-400 truncate mt-0.5">
                           {prompt.description}
@@ -137,26 +152,33 @@ export default function PromptSelector({ onSelect }: { onSelect: (prompt: Prompt
               <Input
                 placeholder="Prompt name"
                 value={newPrompt.name}
-                onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
+                onChange={(e) =>
+                  setNewPrompt({ ...newPrompt, name: e.target.value })
+                }
               />
               <Input
                 placeholder="Description (optional)"
                 value={newPrompt.description}
-                onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
+                onChange={(e) =>
+                  setNewPrompt({ ...newPrompt, description: e.target.value })
+                }
               />
               <textarea
                 placeholder="Prompt text"
                 value={newPrompt.prompt}
-                onChange={(e) => setNewPrompt({ ...newPrompt, prompt: e.target.value })}
+                onChange={(e) =>
+                  setNewPrompt({ ...newPrompt, prompt: e.target.value })
+                }
                 className="w-full min-h-[400px] max-h-[60vh] rounded-md border border-gray-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:ring-neutral-500 resize-y"
               />
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleCreatePrompt}>
-                  Save Prompt
-                </Button>
+                <Button onClick={handleCreatePrompt}>Save Prompt</Button>
               </div>
             </div>
           </div>

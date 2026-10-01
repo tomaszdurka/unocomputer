@@ -18,7 +18,9 @@ export function LinkPicker({
     <div>
       <span className="mb-1 block text-sm font-medium">{label}</span>
       {options.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-neutral-500">{emptyText}</p>
+        <p className="text-sm text-gray-400 dark:text-neutral-500">
+          {emptyText}
+        </p>
       ) : (
         <ul className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-gray-300 bg-white p-2 dark:border-neutral-700 dark:bg-neutral-900">
           {options.map((option) => (

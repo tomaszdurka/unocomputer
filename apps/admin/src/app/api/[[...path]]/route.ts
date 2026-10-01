@@ -10,7 +10,8 @@ import { resolve } from 'node:path';
 // that emits incrementally - SSE, NDJSON/JSONL, chunked downloads - by holding every
 // chunk until the response ended and delivering it as one blob.
 const socketPath =
-  process.env.BACKEND_SOCKET ?? resolve(process.cwd(), '../../data/backend.sock');
+  process.env.BACKEND_SOCKET ??
+  resolve(process.cwd(), '../../data/backend.sock');
 
 const HOP_BY_HOP = new Set([
   'connection',
@@ -45,7 +46,10 @@ function proxy(req: Request): Promise<Response> {
         const responseHeaders = new Headers();
         for (const [key, value] of Object.entries(res.headers)) {
           if (HOP_BY_HOP.has(key) || value === undefined) continue;
-          responseHeaders.set(key, Array.isArray(value) ? value.join(', ') : value);
+          responseHeaders.set(
+            key,
+            Array.isArray(value) ? value.join(', ') : value,
+          );
         }
 
         const status = res.statusCode ?? 502;
@@ -55,7 +59,9 @@ function proxy(req: Request): Promise<Response> {
             ? null
             : (Readable.toWeb(res) as unknown as ReadableStream<Uint8Array>);
 
-        resolvePromise(new Response(body, { status, headers: responseHeaders }));
+        resolvePromise(
+          new Response(body, { status, headers: responseHeaders }),
+        );
       },
     );
 

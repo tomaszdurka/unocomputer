@@ -5,7 +5,11 @@ type ChipsProps = {
 
 export function Chips({ items, emptyText = '—' }: ChipsProps) {
   if (items.length === 0) {
-    return <span className="text-sm text-gray-400 dark:text-neutral-500">{emptyText}</span>;
+    return (
+      <span className="text-sm text-gray-400 dark:text-neutral-500">
+        {emptyText}
+      </span>
+    );
   }
   return (
     <span className="flex flex-wrap gap-1">

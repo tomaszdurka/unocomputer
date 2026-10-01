@@ -18,7 +18,9 @@ describe('WorkspacesController (HTTP)', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'uno-ws-')));
+    tmpDir = fs.realpathSync.native(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'uno-ws-')),
+    );
     findAllWorkspaces = jest.fn().mockResolvedValue(emptyPage());
     findWorkspaceByWorkingDir = jest.fn().mockResolvedValue(null);
     app = await createHttpTestApp({
@@ -55,21 +57,32 @@ describe('WorkspacesController (HTTP)', () => {
     });
 
     it('accepts the directory lookup', async () => {
-      const res = await get(`/api/workspaces?directory=${encodeURIComponent(tmpDir)}`).expect(200);
-      expect(findWorkspaceByWorkingDir).toHaveBeenCalledWith({ workingDir: tmpDir });
+      const res = await get(
+        `/api/workspaces?directory=${encodeURIComponent(tmpDir)}`,
+      ).expect(200);
+      expect(findWorkspaceByWorkingDir).toHaveBeenCalledWith({
+        workingDir: tmpDir,
+      });
       expect(res.body).toEqual({ items: [], total: 0, page: 1, pageSize: 100 });
     });
 
     it('returns the one workspace bound to a folder, in the list envelope', async () => {
-      findWorkspaceByWorkingDir.mockResolvedValue({ workspaceId: 'w1', workingDir: tmpDir });
-      const res = await get(`/api/workspaces?directory=${encodeURIComponent(tmpDir)}`).expect(200);
+      findWorkspaceByWorkingDir.mockResolvedValue({
+        workspaceId: 'w1',
+        workingDir: tmpDir,
+      });
+      const res = await get(
+        `/api/workspaces?directory=${encodeURIComponent(tmpDir)}`,
+      ).expect(200);
       expect(res.body.items).toHaveLength(1);
       expect(res.body.items[0].workspaceId).toBe('w1');
       expect(res.body.total).toBe(1);
     });
 
     it('reports a folder that does not exist as simply having no workspace', async () => {
-      const res = await get('/api/workspaces?directory=%2Fno%2Fsuch%2Ffolder').expect(200);
+      const res = await get(
+        '/api/workspaces?directory=%2Fno%2Fsuch%2Ffolder',
+      ).expect(200);
       expect(res.body).toEqual({ items: [], total: 0, page: 1, pageSize: 100 });
       expect(findWorkspaceByWorkingDir).not.toHaveBeenCalled();
     });
@@ -85,7 +98,8 @@ describe('WorkspacesController (HTTP)', () => {
   });
 
   describe('POST /api/workspaces', () => {
-    const post = (body: object) => request(app.getHttpServer()).post('/api/workspaces').send(body);
+    const post = (body: object) =>
+      request(app.getHttpServer()).post('/api/workspaces').send(body);
 
     it('refuses a relative directory', async () => {
       const res = await post({ directory: 'relative/path' }).expect(400);
@@ -104,7 +118,10 @@ describe('WorkspacesController (HTTP)', () => {
     });
 
     it('409s when the folder already belongs to a workspace', async () => {
-      findWorkspaceByWorkingDir.mockResolvedValue({ workspaceId: 'w-existing', workingDir: tmpDir });
+      findWorkspaceByWorkingDir.mockResolvedValue({
+        workspaceId: 'w-existing',
+        workingDir: tmpDir,
+      });
       const res = await post({ directory: tmpDir }).expect(409);
       expect(JSON.stringify(res.body)).toContain('w-existing');
     });

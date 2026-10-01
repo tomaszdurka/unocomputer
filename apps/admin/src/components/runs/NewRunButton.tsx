@@ -11,7 +11,15 @@ import { queueRun } from '#/lib/api';
 export default function NewRunButton() {
   const [open, setOpen] = useState(false);
 
-  const handleNewRun = async ({ prompt, schema, model }: { prompt: string; schema?: unknown; model?: string }) => {
+  const handleNewRun = async ({
+    prompt,
+    schema,
+    model,
+  }: {
+    prompt: string;
+    schema?: unknown;
+    model?: string;
+  }) => {
     // No workspaceId or sessionId - creates a new workspace and session.
     return await queueRun({ prompt, schema, model });
   };

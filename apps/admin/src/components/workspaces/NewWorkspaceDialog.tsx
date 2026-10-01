@@ -15,7 +15,10 @@ type NewWorkspaceDialogProps = {
  * Bind a workspace to a folder, or get a managed one. The backend decides
  * whether the folder is acceptable; whatever it answers is shown as is.
  */
-export default function NewWorkspaceDialog({ open, onOpenChange }: NewWorkspaceDialogProps) {
+export default function NewWorkspaceDialog({
+  open,
+  onOpenChange,
+}: NewWorkspaceDialogProps) {
   const router = useRouter();
   const [directory, setDirectory] = useState('');
   const [name, setName] = useState('');
@@ -71,7 +74,8 @@ export default function NewWorkspaceDialog({ open, onOpenChange }: NewWorkspaceD
               disabled={submitting}
             />
             <p className="text-xs text-gray-500 dark:text-neutral-400">
-              Absolute path to an existing folder. One folder can have one workspace.
+              Absolute path to an existing folder. One folder can have one
+              workspace.
             </p>
           </div>
 
@@ -93,7 +97,12 @@ export default function NewWorkspaceDialog({ open, onOpenChange }: NewWorkspaceD
           ) : null}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>

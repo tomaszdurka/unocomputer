@@ -1,23 +1,22 @@
-import {Injectable, Logger} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CliEvent } from '../lib/json';
-import * as fs from "node:fs";
+import * as fs from 'node:fs';
 import { Run } from '../database/types';
-import {executeCommandWithJsonStreamOutput} from "../lib/executeCommandWithJsonStreamOutput";
-import {RunOptions, RunResult} from "../runs/dto/run-options";
-
+import { executeCommandWithJsonStreamOutput } from '../lib/executeCommandWithJsonStreamOutput';
+import { RunOptions, RunResult } from '../runs/dto/run-options';
 
 @Injectable()
 export class ClaudeService {
   private readonly logger = new Logger(ClaudeService.name);
 
   async run(options: RunOptions): Promise<RunResult> {
-    const {run, session, workspace, cliModel} = options;
-    const {runId, prompt, outputSchema} = run;
-
+    const { run, session, workspace, cliModel } = options;
+    const { runId, prompt, outputSchema } = run;
 
     // Check if this is the first run in the session (no completed runs yet)
     const sessionRuns = session.runs ?? [];
-    const isFirstRun = sessionRuns.filter((r: Run) => r.runId !== runId).length === 0;
+    const isFirstRun =
+      sessionRuns.filter((r: Run) => r.runId !== runId).length === 0;
 
     const permissionMode = 'bypassPermissions';
     const args = [];
@@ -78,7 +77,10 @@ export class ClaudeService {
       onLine: (event: CliEvent) => {
         if (event.type === 'result' || event.type === 'result_success') {
           result = {
-            result: typeof event.result === 'string' ? event.result : JSON.stringify(event.result ?? null),
+            result:
+              typeof event.result === 'string'
+                ? event.result
+                : JSON.stringify(event.result ?? null),
             ...(event.structured_output !== undefined
               ? { structuredResult: event.structured_output }
               : {}),

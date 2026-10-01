@@ -1,7 +1,18 @@
-import { Controller, Get, Post, Param, Body, Query, Res, Headers, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  Res,
+  Headers,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CliEvent, JsonObject } from '../lib/json';
 import type { Run } from '../database/types';
-import {ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
 import { PaginatedRunsDto, RunDto } from '../database/dto';
 import { type Page } from '../common/dto';
@@ -12,7 +23,7 @@ import { PersistenceService } from '../database/persistence.service';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'node:fs';
 import { defaultWorkspaceDir } from '../workspaces/workspace-directory';
-import {RunsService} from "./runs.service";
+import { RunsService } from './runs.service';
 
 @ApiTags('runs')
 @Controller('runs')
@@ -20,8 +31,7 @@ export class RunsController {
   constructor(
     private readonly persistence: PersistenceService,
     private readonly runs: RunsService,
-  ) {
-  }
+  ) {}
 
   private async prepareRun(dto: CreateRunDto) {
     let workspace;
@@ -38,23 +48,32 @@ export class RunsController {
       // If workspaceId also provided, validate it matches
       if (dto.workspaceId && workspace.workspaceId !== dto.workspaceId) {
         throw new BadRequestException(
-          `Session ${dto.sessionId} belongs to workspace ${workspace.workspaceId}, not ${dto.workspaceId}`
+          `Session ${dto.sessionId} belongs to workspace ${workspace.workspaceId}, not ${dto.workspaceId}`,
         );
       }
     } else if (dto.workspaceId) {
       // Create new session in existing workspace
-      workspace = await this.persistence.getWorkspace({ workspaceId: dto.workspaceId });
+      workspace = await this.persistence.getWorkspace({
+        workspaceId: dto.workspaceId,
+      });
       if (!workspace) {
         throw new NotFoundException(`Workspace ${dto.workspaceId} not found`);
       }
-      session = await this.persistence.createSession({ workspaceId: workspace.workspaceId });
+      session = await this.persistence.createSession({
+        workspaceId: workspace.workspaceId,
+      });
     } else {
       // Create new workspace and session
       const workspaceId = uuidv4();
       const workingDir = defaultWorkspaceDir(workspaceId);
       fs.mkdirSync(workingDir, { recursive: true });
-      workspace = await this.persistence.createWorkspace({ workspaceId, workingDir });
-      session = await this.persistence.createSession({ workspaceId: workspace.workspaceId });
+      workspace = await this.persistence.createWorkspace({
+        workspaceId,
+        workingDir,
+      });
+      session = await this.persistence.createSession({
+        workspaceId: workspace.workspaceId,
+      });
     }
 
     // Create run
@@ -73,7 +92,8 @@ export class RunsController {
   @Post('queue')
   @ApiOperation({
     summary: 'Queue run execution',
-    description: 'Queue a Claude CLI run for execution and return immediately with 201 Created. Provide sessionId to continue session, workspaceId to create new session in workspace, or neither to create new workspace.'
+    description:
+      'Queue a Claude CLI run for execution and return immediately with 201 Created. Provide sessionId to continue session, workspaceId to create new session in workspace, or neither to create new workspace.',
   })
   @ApiResponse({
     status: 201,
@@ -84,20 +104,25 @@ export class RunsController {
         runId: { type: 'string' },
         sessionId: { type: 'string' },
         workspaceId: { type: 'string' },
-      }
-    }
+      },
+    },
   })
-  async queueRun(@Body() dto: CreateRunDto, @Res() res: Response): Promise<void> {
+  async queueRun(
+    @Body() dto: CreateRunDto,
+    @Res() res: Response,
+  ): Promise<void> {
     const { run, session, workspace } = await this.prepareRun(dto);
 
     // Start job asynchronously
-    this.runs.run({
-      run,
-      session,
-      workspace,
-    }).catch(err => {
-      console.error(`Error in background job ${run.runId}:`, err);
-    });
+    this.runs
+      .run({
+        run,
+        session,
+        workspace,
+      })
+      .catch((err) => {
+        console.error(`Error in background job ${run.runId}:`, err);
+      });
 
     res.status(201).json({
       runId: run.runId,
@@ -109,7 +134,8 @@ export class RunsController {
   @Post()
   @ApiOperation({
     summary: 'Execute run',
-    description: 'Execute a Claude CLI run. Supports streaming (application/x-ndjson) and buffered modes. Provide sessionId to continue session, workspaceId to create new session in workspace, or neither to create new workspace.'
+    description:
+      'Execute a Claude CLI run. Supports streaming (application/x-ndjson) and buffered modes. Provide sessionId to continue session, workspaceId to create new session in workspace, or neither to create new workspace.',
   })
   @ApiResponse({
     status: 200,
@@ -124,19 +150,19 @@ export class RunsController {
             sessionId: { type: 'string' },
             runId: { type: 'string' },
             result: { type: 'object' },
-            structuredResult: { type: 'object' }
-          }
-        }
+            structuredResult: { type: 'object' },
+          },
+        },
       },
       'application/x-ndjson': {
         // OpenAPI 3.2 itemSchema not yet supported by @nestjs/swagger 11.2.6
         // Using schema as workaround - manually add itemSchema to generated spec if needed
         schema: {
           type: 'string',
-          description: 'Newline-delimited JSON stream of events'
-        }
-      } as JsonObject
-    }
+          description: 'Newline-delimited JSON stream of events',
+        },
+      } as JsonObject,
+    },
   })
   async executeRun(
     @Body() dto: CreateRunDto,
@@ -150,17 +176,19 @@ export class RunsController {
 
     const writeEvent = (event: CliEvent | RunResult) => {
       if (!clientDisconnected) {
-        res.write(JSON.stringify({
-          timestamp: new Date().toISOString(),
-          workspaceId: workspace.workspaceId,
-          sessionId: session.sessionId,
-          runId: run.runId,
-          ...event
-        }) + '\n');
+        res.write(
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            workspaceId: workspace.workspaceId,
+            sessionId: session.sessionId,
+            runId: run.runId,
+            ...event,
+          }) + '\n',
+        );
       }
     };
 
-    res.on('close', () => clientDisconnected = true);
+    res.on('close', () => (clientDisconnected = true));
 
     if (isStreaming) {
       res.setHeader('Content-Type', 'application/x-ndjson');
@@ -189,7 +217,11 @@ export class RunsController {
       '(repeatable - a run must carry EVERY tag given) and `status`, so a ' +
       'caller can ask "do I already have a run of this kind in flight?"',
   })
-  @ApiResponse({ status: 200, description: 'A page of runs', type: PaginatedRunsDto })
+  @ApiResponse({
+    status: 200,
+    description: 'A page of runs',
+    type: PaginatedRunsDto,
+  })
   async listRuns(@Query() query: ListRunsQueryDto): Promise<Page<Run>> {
     return await this.persistence.findAllRuns(query, {
       tags: query.tag,
@@ -198,9 +230,17 @@ export class RunsController {
   }
 
   @Get(':runId')
-  @ApiOperation({ summary: 'Get run details', description: 'Get detailed information about a specific run including all events' })
-  @ApiParam({ name: 'runId'})
-  @ApiResponse({ status: 200, description: 'Run details with events', type: RunDto })
+  @ApiOperation({
+    summary: 'Get run details',
+    description:
+      'Get detailed information about a specific run including all events',
+  })
+  @ApiParam({ name: 'runId' })
+  @ApiResponse({
+    status: 200,
+    description: 'Run details with events',
+    type: RunDto,
+  })
   @ApiResponse({ status: 404, description: 'Run not found' })
   async getRun(@Param('runId') runId: string): Promise<Run> {
     const run = await this.persistence.findRunWithEvents({ runId });

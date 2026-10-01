@@ -16,8 +16,18 @@ export const brand = {
 
 export const navigation: SidebarItem[] = [
   { href: '/runs', label: 'Runs', icon: <PlayIcon />, match: 'prefix' },
-  { href: '/sessions', label: 'Sessions', icon: <MessagesIcon />, match: 'prefix' },
-  { href: '/workspaces', label: 'Workspaces', icon: <FolderIcon />, match: 'prefix' },
+  {
+    href: '/sessions',
+    label: 'Sessions',
+    icon: <MessagesIcon />,
+    match: 'prefix',
+  },
+  {
+    href: '/workspaces',
+    label: 'Workspaces',
+    icon: <FolderIcon />,
+    match: 'prefix',
+  },
 ];
 
 export const settingsNavigation: SidebarItem[] = [

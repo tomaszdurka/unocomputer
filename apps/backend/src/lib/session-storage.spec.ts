@@ -5,11 +5,15 @@ import { providerSessionDir, sessionsDir } from './session-storage';
 
 describe('sessionsDir', () => {
   it('honours SESSIONS_DIR', () => {
-    expect(sessionsDir({ SESSIONS_DIR: '/data/sessions' })).toBe('/data/sessions');
+    expect(sessionsDir({ SESSIONS_DIR: '/data/sessions' })).toBe(
+      '/data/sessions',
+    );
   });
 
   it('defaults to data/sessions beside the database', () => {
-    expect(sessionsDir({})).toBe(path.resolve(process.cwd(), '../../data/sessions'));
+    expect(sessionsDir({})).toBe(
+      path.resolve(process.cwd(), '../../data/sessions'),
+    );
   });
 });
 
@@ -31,7 +35,12 @@ describe('providerSessionDir', () => {
   });
 
   it('creates the folder under the store, not the workspace', () => {
-    const dir = providerSessionDir('codex', session, { workingDir: workspaceDir }, store);
+    const dir = providerSessionDir(
+      'codex',
+      session,
+      { workingDir: workspaceDir },
+      store,
+    );
 
     expect(dir).toBe(path.join(store, 'codex', 's1'));
     expect(fs.statSync(dir).isDirectory()).toBe(true);
@@ -43,9 +52,16 @@ describe('providerSessionDir', () => {
     fs.mkdirSync(legacy, { recursive: true });
     fs.writeFileSync(path.join(legacy, 'session-id'), 'codex-123');
 
-    const dir = providerSessionDir('codex', session, { workingDir: workspaceDir }, store);
+    const dir = providerSessionDir(
+      'codex',
+      session,
+      { workingDir: workspaceDir },
+      store,
+    );
 
-    expect(fs.readFileSync(path.join(dir, 'session-id'), 'utf-8')).toBe('codex-123');
+    expect(fs.readFileSync(path.join(dir, 'session-id'), 'utf-8')).toBe(
+      'codex-123',
+    );
     expect(fs.existsSync(path.join(workspaceDir, '.codex'))).toBe(false);
   });
 
@@ -60,12 +76,24 @@ describe('providerSessionDir', () => {
   });
 
   it('is a no-op once the folder is in the store', () => {
-    const first = providerSessionDir('codex', session, { workingDir: workspaceDir }, store);
+    const first = providerSessionDir(
+      'codex',
+      session,
+      { workingDir: workspaceDir },
+      store,
+    );
     fs.writeFileSync(path.join(first, 'session-id'), 'kept');
 
-    const second = providerSessionDir('codex', session, { workingDir: workspaceDir }, store);
+    const second = providerSessionDir(
+      'codex',
+      session,
+      { workingDir: workspaceDir },
+      store,
+    );
 
     expect(second).toBe(first);
-    expect(fs.readFileSync(path.join(second, 'session-id'), 'utf-8')).toBe('kept');
+    expect(fs.readFileSync(path.join(second, 'session-id'), 'utf-8')).toBe(
+      'kept',
+    );
   });
 });

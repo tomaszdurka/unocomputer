@@ -23,7 +23,10 @@ const run = (over: Partial<Run> = {}): Run => ({
 });
 
 /** Wraps fixture rows in the envelope the view now receives. */
-const page = (items: Run[], over: Partial<Paginated<Run>> = {}): Paginated<Run> => ({
+const page = (
+  items: Run[],
+  over: Partial<Paginated<Run>> = {},
+): Paginated<Run> => ({
   items,
   total: items.length,
   page: 1,
@@ -41,7 +44,9 @@ describe('RunsListView', () => {
   });
 
   it('shows the caller tags under the prompt', () => {
-    render(<RunsListView runs={page([run({ tags: ['job-hunt', 'matching'] })])} />);
+    render(
+      <RunsListView runs={page([run({ tags: ['job-hunt', 'matching'] })])} />,
+    );
     expect(screen.getByText('job-hunt')).toBeDefined();
     expect(screen.getByText('matching')).toBeDefined();
   });
@@ -65,8 +70,16 @@ describe('RunsListView', () => {
     render(
       <RunsListView
         runs={page([
-          run({ runId: 'new', prompt: 'newer', startedAt: '2026-06-01T00:00:00.000Z' }),
-          run({ runId: 'old', prompt: 'older', startedAt: '2026-01-01T00:00:00.000Z' }),
+          run({
+            runId: 'new',
+            prompt: 'newer',
+            startedAt: '2026-06-01T00:00:00.000Z',
+          }),
+          run({
+            runId: 'old',
+            prompt: 'older',
+            startedAt: '2026-01-01T00:00:00.000Z',
+          }),
         ])}
       />,
     );
@@ -80,17 +93,24 @@ describe('RunsListView', () => {
     ['failure', 'rose'],
     ['stopped', 'amber'],
     ['running', 'blue'],
-  ] as const)('gives %s runs a %s badge that actually carries colour classes', (status, hue) => {
-    render(<RunsListView runs={page([run({ status, completedAt: null })])} />);
-    const badge = screen.getByText(status);
-    // Guards the regression where a colour existed in markup but emitted no CSS.
-    expect(badge.className).toContain(`${hue}-`);
-    expect(badge.className).toContain('dark:');
-  });
+  ] as const)(
+    'gives %s runs a %s badge that actually carries colour classes',
+    (status, hue) => {
+      render(
+        <RunsListView runs={page([run({ status, completedAt: null })])} />,
+      );
+      const badge = screen.getByText(status);
+      // Guards the regression where a colour existed in markup but emitted no CSS.
+      expect(badge.className).toContain(`${hue}-`);
+      expect(badge.className).toContain('dark:');
+    },
+  );
 
   it('links each row to its run', () => {
     render(<RunsListView runs={page([run()])} />);
-    const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/runs/r1');
+    const link = screen
+      .getAllByRole('link')
+      .find((a) => a.getAttribute('href') === '/runs/r1');
     expect(link).toBeDefined();
   });
 
@@ -100,7 +120,11 @@ describe('RunsListView', () => {
   });
 
   it('shows pagination once the total exceeds a page, with the total in the caption', () => {
-    render(<RunsListView runs={page([run()], { total: 438, page: 2, pageSize: 100 })} />);
+    render(
+      <RunsListView
+        runs={page([run()], { total: 438, page: 2, pageSize: 100 })}
+      />,
+    );
     expect(screen.getByText('Recent Runs (438)')).toBeDefined();
     expect(screen.getByText(/Showing 101.*200 of 438/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDefined();

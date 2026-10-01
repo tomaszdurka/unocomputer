@@ -1,4 +1,13 @@
-import { ApiError, listRuns, getRun, queueRun, deletePrompt, createWorkspace, createSession, updateSession } from './api';
+import {
+  ApiError,
+  listRuns,
+  getRun,
+  queueRun,
+  deletePrompt,
+  createWorkspace,
+  createSession,
+  updateSession,
+} from './api';
 
 // api.ts picks its transport from `typeof window`. Under jsdom a window exists, so these
 // exercise the browser path: same-origin /api/*, which the route handler proxies to the
@@ -14,7 +23,11 @@ describe('api client (browser transport)', () => {
   });
 
   const ok = (body: unknown) =>
-    Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(body),
+    });
 
   it('prefixes every path with /api so it goes through the proxy', async () => {
     fetchMock.mockReturnValue(ok([]));
@@ -61,7 +74,13 @@ describe('api client (browser transport)', () => {
   });
 
   it('throws with the status and path when the API rejects', async () => {
-    fetchMock.mockReturnValue(Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) }));
+    fetchMock.mockReturnValue(
+      Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve(null),
+      }),
+    );
     await expect(getRun('missing')).rejects.toThrow('API 404: /runs/missing');
   });
 
@@ -70,11 +89,17 @@ describe('api client (browser transport)', () => {
       Promise.resolve({
         ok: false,
         status: 409,
-        json: () => Promise.resolve({ statusCode: 409, message: '/repo already belongs to workspace w1' }),
+        json: () =>
+          Promise.resolve({
+            statusCode: 409,
+            message: '/repo already belongs to workspace w1',
+          }),
       }),
     );
     const failure = createWorkspace({ directory: '/repo' });
-    await expect(failure).rejects.toThrow('/repo already belongs to workspace w1');
+    await expect(failure).rejects.toThrow(
+      '/repo already belongs to workspace w1',
+    );
     await expect(failure).rejects.toBeInstanceOf(ApiError);
     await expect(failure).rejects.toMatchObject({ status: 409 });
   });
@@ -84,7 +109,10 @@ describe('api client (browser transport)', () => {
       Promise.resolve({
         ok: false,
         status: 400,
-        json: () => Promise.resolve({ message: ['directory should not be empty', 'name must be a string'] }),
+        json: () =>
+          Promise.resolve({
+            message: ['directory should not be empty', 'name must be a string'],
+          }),
       }),
     );
     await expect(createWorkspace({ directory: '' })).rejects.toThrow(

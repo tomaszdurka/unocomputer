@@ -2,15 +2,22 @@ import { BadRequestException } from '@nestjs/common';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { defaultWorkspaceDir, resolveCallerDirectory } from './workspace-directory';
+import {
+  defaultWorkspaceDir,
+  resolveCallerDirectory,
+} from './workspace-directory';
 
 describe('defaultWorkspaceDir', () => {
   it('nests the workspace under WORKSPACES_DIR', () => {
-    expect(defaultWorkspaceDir('w1', { WORKSPACES_DIR: '/data/ws' })).toBe('/data/ws/w1');
+    expect(defaultWorkspaceDir('w1', { WORKSPACES_DIR: '/data/ws' })).toBe(
+      '/data/ws/w1',
+    );
   });
 
   it('falls back to ./workspaces beside the backend', () => {
-    expect(defaultWorkspaceDir('w1', {})).toBe(path.join(process.cwd(), 'workspaces', 'w1'));
+    expect(defaultWorkspaceDir('w1', {})).toBe(
+      path.join(process.cwd(), 'workspaces', 'w1'),
+    );
   });
 });
 
@@ -26,7 +33,9 @@ describe('resolveCallerDirectory', () => {
   });
 
   it('rejects a relative path', () => {
-    expect(() => resolveCallerDirectory('projects/app')).toThrow(BadRequestException);
+    expect(() => resolveCallerDirectory('projects/app')).toThrow(
+      BadRequestException,
+    );
   });
 
   it('rejects a folder that does not exist', () => {
@@ -48,6 +57,8 @@ describe('resolveCallerDirectory', () => {
     fs.symlinkSync(dir, link);
 
     expect(resolveCallerDirectory(link)).toBe(fs.realpathSync.native(dir));
-    expect(resolveCallerDirectory(dir + path.sep)).toBe(fs.realpathSync.native(dir));
+    expect(resolveCallerDirectory(dir + path.sep)).toBe(
+      fs.realpathSync.native(dir),
+    );
   });
 });

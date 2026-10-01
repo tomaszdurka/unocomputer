@@ -7,7 +7,11 @@ export const DEFAULT_PAGE_SIZE = 100;
 export const MAX_PAGE_SIZE = 100;
 
 export class PaginationQueryDto {
-  @ApiPropertyOptional({ minimum: 1, default: 1, description: '1-based page number' })
+  @ApiPropertyOptional({
+    minimum: 1,
+    default: 1,
+    description: '1-based page number',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -18,7 +22,8 @@ export class PaginationQueryDto {
     minimum: 1,
     maximum: MAX_PAGE_SIZE,
     default: DEFAULT_PAGE_SIZE,
-    description: 'Rows per page. Capped so one request cannot pull the whole table.',
+    description:
+      'Rows per page. Capped so one request cannot pull the whole table.',
   })
   @IsOptional()
   @Type(() => Number)

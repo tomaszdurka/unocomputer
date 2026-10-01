@@ -37,28 +37,33 @@ src/
 ### Service Responsibilities
 
 **RunsController / RunsService**
+
 - `prepareRun(dto)` (controller): resolves `sessionId` / `workspaceId` / neither into a session and workspace; a run with neither gets a managed workspace from `defaultWorkspaceDir()` (`src/workspaces/workspace-directory.ts`)
 - `runProvider()` (service): splits `<provider>:<model>` and dispatches to claude / gemini / codex
 - `src/lib/executeCommandWithJsonStreamOutput.ts`: generic utility for running commands that output JSONL
 
 **ClaudeService**
+
 - `run(options)`: Execute Claude CLI in the workspace folder; writes nothing there itself
 - First run uses: `claude --session-id <id> -p <prompt> --output-format stream-json --verbose --permission-mode bypassPermissions`
 - Subsequent runs use: `claude --resume <session-id> -p <prompt> ...`
 - Strips `CLAUDE_CODE` and `CLAUDECODE` from environment to avoid nesting
 
 **WorkspacesController**
+
 - `POST /workspaces`: Create workspace - bound to an existing folder with `directory` (400 if relative/missing/not a directory, 409 if that folder already has a workspace) or managed under `WORKSPACES_DIR`; optional `agentsMd` content
 - `GET /workspaces`: List all workspaces
 - `GET /workspaces/:id`: Get workspace details with `sessions` and `runs`
 - `PATCH /workspaces/:id`: Update workspace properties
 
 **SessionsController**
+
 - `POST /sessions`: Create a session in a workspace, optionally named (404 unknown workspace)
 - `GET /sessions`, `GET /sessions/:id`
 - `PATCH /sessions/:id`: Rename (`name: null` clears). Runs still address sessions by id; a name is a label
 
 **Workspace Files**
+
 - `AGENTS.md`: Optional project guidelines (created via POST /workspaces with `agentsMd` param)
 - Nothing else: a bound workspace is somebody's real folder. Codex/gemini resume ids live in `SESSIONS_DIR/<provider>/<sessionId>` (`src/lib/session-storage.ts`), which also moves a legacy `<workspace>/.codex|.gemini/<sessionId>` folder on first use
 
@@ -74,10 +79,12 @@ src/
 ### Response Modes
 
 **Buffered** (`Accept: application/json`):
+
 - Single JSON response with `type: "result"` event
 - Includes `workspaceId`, `runId`, `timestamp`
 
 **Streaming** (`Accept: application/x-ndjson`):
+
 - JSONL stream of all events from Claude CLI
 - Each line augmented with `workspaceId`, `runId`, `timestamp`
 - Client disconnect handling
@@ -87,21 +94,25 @@ src/
 ### When Modifying Code
 
 **Adding Features**
+
 - Follow existing NestJS patterns (modules, services, controllers)
 - Keep workspace isolation intact
 - Maintain both streaming and buffered modes
 - Update SPEC.md if API changes
 
 **Workspace State Files**
+
 - `CLAUDE.md`: Generated reference (points to AGENTS.md)
 - `AGENTS.md`: Optional project guidelines (created via API)
 
 **Error Handling**
+
 - Use NestJS exceptions (`BadRequestException`, etc.)
 - Validate workspaceId exists before reuse (400 if not)
 - Log JSON parsing errors but don't crash
 
 **Security**
+
 - Never expose without authentication/rate limiting
 - Validate all user inputs
 - Be cautious with `--permission-mode bypassPermissions`
@@ -153,20 +164,24 @@ curl -X POST http://unocomputer.localhost/api/runs \
 ## Common Tasks
 
 ### Add New Endpoint
+
 1. Create DTO in `src/runs/dto/`
 2. Add method to `RunsController`
 3. Implement logic in `RunsService` or new service
 4. Update SPEC.md
 
 ### Set Workspace Instructions
+
 - Pass `agentsMd` when creating workspace via `POST /workspaces`
 - AGENTS.md content is controlled by the caller, not hardcoded
 
 ### Change Permission Mode
+
 - Edit `src/claude/claude.service.ts` line 37
 - Options: `bypassPermissions`, `plan`, `prompt`
 
 ### Add CLI Flags
+
 - Edit `args` array in `src/claude/claude.service.ts`
 - Maintain `--output-format stream-json` for parsing
 
@@ -183,6 +198,7 @@ curl -X POST http://unocomputer.localhost/api/runs \
 This project enables building applications on top of Claude CLI without needing to parse terminal output. It provides a clean HTTP → JSONL bridge with workspace state management.
 
 Use cases:
+
 - CI/CD integrations
 - Programmatic code generation
 - Multi-step workflows with workspace continuity

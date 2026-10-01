@@ -7,11 +7,15 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
 
 const components: Components = {
-  h1: (props) => <h1 className="mt-5 mb-2 text-lg font-semibold first:mt-0" {...props} />,
+  h1: (props) => (
+    <h1 className="mt-5 mb-2 text-lg font-semibold first:mt-0" {...props} />
+  ),
   h2: (props) => (
     <h2 className="mt-4 mb-2 text-base font-semibold first:mt-0" {...props} />
   ),
-  h3: (props) => <h3 className="mt-3 mb-1 text-sm font-semibold first:mt-0" {...props} />,
+  h3: (props) => (
+    <h3 className="mt-3 mb-1 text-sm font-semibold first:mt-0" {...props} />
+  ),
   p: (props) => <p className="mb-3 last:mb-0" {...props} />,
   ul: (props) => <ul className="mb-3 list-disc space-y-1 pl-5" {...props} />,
   ol: (props) => <ol className="mb-3 list-decimal space-y-1 pl-5" {...props} />,
@@ -45,7 +49,10 @@ const components: Components = {
     <hr className="my-4 border-gray-200 dark:border-neutral-800" {...props} />
   ),
   strong: (props) => (
-    <strong className="font-semibold text-gray-900 dark:text-neutral-100" {...props} />
+    <strong
+      className="font-semibold text-gray-900 dark:text-neutral-100"
+      {...props}
+    />
   ),
 };
 

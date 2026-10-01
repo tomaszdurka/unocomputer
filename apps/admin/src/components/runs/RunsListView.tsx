@@ -25,10 +25,14 @@ function elapsedForRun(run: Run) {
 }
 
 function statusBadgeClass(status: string) {
-  if (status === 'success') return 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
-  if (status === 'running') return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900';
-  if (status === 'failure') return 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900';
-  if (status === 'stopped') return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
+  if (status === 'success')
+    return 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
+  if (status === 'running')
+    return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900';
+  if (status === 'failure')
+    return 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900';
+  if (status === 'stopped')
+    return 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900';
   return 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 }
 
@@ -58,7 +62,7 @@ const columns: Column<Run>[] = [
           </p>
         ) : null}
       </div>
-    )
+    ),
   },
   {
     key: 'model',
@@ -71,7 +75,7 @@ const columns: Column<Run>[] = [
       >
         {run.model || 'claude'}
       </Badge>
-    )
+    ),
   },
   {
     key: 'status',
@@ -81,16 +85,21 @@ const columns: Column<Run>[] = [
       <Badge variant="outline" className={statusBadgeClass(run.status)}>
         {run.status}
       </Badge>
-    )
+    ),
   },
-  { key: 'elapsed', header: 'Elapsed', width: '110px', cell: (run) => elapsedForRun(run) },
+  {
+    key: 'elapsed',
+    header: 'Elapsed',
+    width: '110px',
+    cell: (run) => elapsedForRun(run),
+  },
   {
     key: 'started',
     header: 'Started',
     width: '220px',
     className: 'whitespace-nowrap text-gray-500 dark:text-neutral-400',
-    cell: (run) => run.startedAt
-  }
+    cell: (run) => run.startedAt,
+  },
 ];
 
 export default function RunsListView({ runs }: { runs: Paginated<Run> }) {
@@ -103,7 +112,11 @@ export default function RunsListView({ runs }: { runs: Paginated<Run> }) {
       rowHref={(run) => `/runs/${run.runId}`}
       footer={
         runs.total > runs.pageSize ? (
-          <PagePagination page={runs.page} pageSize={runs.pageSize} total={runs.total} />
+          <PagePagination
+            page={runs.page}
+            pageSize={runs.pageSize}
+            total={runs.total}
+          />
         ) : null
       }
       empty='No runs yet. Click "New Run" to get started!'

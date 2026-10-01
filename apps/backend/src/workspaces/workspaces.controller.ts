@@ -1,12 +1,36 @@
-import { Controller, Get, Post, Param, Patch, Body, Query, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Patch,
+  Body,
+  Query,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import type { Workspace } from '../database/types';
-import {ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { PersistenceService } from '../database/persistence.service';
 import { PaginatedWorkspacesDto, WorkspaceDto } from '../database/dto';
 import { type Page } from '../common/dto';
-import { CreateWorkspaceDto, ListWorkspacesQueryDto, UpdateWorkspaceDto } from './dto';
+import {
+  CreateWorkspaceDto,
+  ListWorkspacesQueryDto,
+  UpdateWorkspaceDto,
+} from './dto';
 import { WorkspaceDirectoryTakenError } from '../database/errors';
-import { defaultWorkspaceDir, resolveCallerDirectory } from './workspace-directory';
+import {
+  defaultWorkspaceDir,
+  resolveCallerDirectory,
+} from './workspace-directory';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,22 +38,32 @@ import * as path from 'path';
 @ApiTags('workspaces')
 @Controller('workspaces')
 export class WorkspacesController {
-  constructor(
-    private readonly db: PersistenceService,
-  ) {}
+  constructor(private readonly db: PersistenceService) {}
 
   @Post()
   @ApiOperation({
     summary: 'Create workspace',
     description:
       'Create a workspace, either bound to an existing folder (`directory`) or as a ' +
-      'managed folder under WORKSPACES_DIR. One folder = one workspace. Optional AGENTS.md.'
+      'managed folder under WORKSPACES_DIR. One folder = one workspace. Optional AGENTS.md.',
   })
   @ApiBody({ type: CreateWorkspaceDto })
-  @ApiResponse({ status: 201, description: 'Workspace created successfully', type: WorkspaceDto })
-  @ApiResponse({ status: 400, description: 'directory is relative, missing or not a directory' })
-  @ApiResponse({ status: 409, description: 'A workspace already exists for that directory' })
-  async createWorkspace(@Body() createDto: CreateWorkspaceDto): Promise<Workspace> {
+  @ApiResponse({
+    status: 201,
+    description: 'Workspace created successfully',
+    type: WorkspaceDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'directory is relative, missing or not a directory',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'A workspace already exists for that directory',
+  })
+  async createWorkspace(
+    @Body() createDto: CreateWorkspaceDto,
+  ): Promise<Workspace> {
     const workspaceId = uuidv4();
     let workingDir: string;
 
@@ -39,7 +73,7 @@ export class WorkspacesController {
       const existing = await this.db.findWorkspaceByWorkingDir({ workingDir });
       if (existing) {
         throw new ConflictException(
-          `${workingDir} already belongs to workspace ${existing.workspaceId}`
+          `${workingDir} already belongs to workspace ${existing.workspaceId}`,
         );
       }
     } else {
@@ -77,10 +111,16 @@ export class WorkspacesController {
     description:
       'All workspaces, newest first, a page at a time. With `directory`, only the ' +
       'workspace bound to that folder (`items` holds one or none), so a caller can find ' +
-      '"the workspace for this folder" before creating it.'
+      '"the workspace for this folder" before creating it.',
   })
-  @ApiResponse({ status: 200, description: 'A page of workspaces', type: PaginatedWorkspacesDto })
-  async listWorkspaces(@Query() query: ListWorkspacesQueryDto): Promise<Page<Workspace>> {
+  @ApiResponse({
+    status: 200,
+    description: 'A page of workspaces',
+    type: PaginatedWorkspacesDto,
+  })
+  async listWorkspaces(
+    @Query() query: ListWorkspacesQueryDto,
+  ): Promise<Page<Workspace>> {
     const { directory } = query;
     if (directory === undefined) {
       return await this.db.findAllWorkspaces(query);
@@ -107,11 +147,25 @@ export class WorkspacesController {
   }
 
   @Get(':workspaceId')
-  @ApiOperation({ summary: 'Get workspace details', description: 'Get detailed information about a workspace including all its runs' })
-  @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @ApiResponse({ status: 200, description: 'Workspace details with runs', type: WorkspaceDto })
+  @ApiOperation({
+    summary: 'Get workspace details',
+    description:
+      'Get detailed information about a workspace including all its runs',
+  })
+  @ApiParam({
+    name: 'workspaceId',
+    description: 'Workspace ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Workspace details with runs',
+    type: WorkspaceDto,
+  })
   @ApiResponse({ status: 404, description: 'Workspace not found' })
-  async getWorkspace(@Param('workspaceId') workspaceId: string): Promise<Workspace> {
+  async getWorkspace(
+    @Param('workspaceId') workspaceId: string,
+  ): Promise<Workspace> {
     const workspace = await this.db.findWorkspaceWithRuns({ id: workspaceId });
 
     if (!workspace) {
@@ -122,18 +176,29 @@ export class WorkspacesController {
   }
 
   @Patch(':workspaceId')
-  @ApiOperation({ summary: 'Update workspace', description: 'Update workspace properties like name' })
-  @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiOperation({
+    summary: 'Update workspace',
+    description: 'Update workspace properties like name',
+  })
+  @ApiParam({
+    name: 'workspaceId',
+    description: 'Workspace ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @ApiBody({ type: UpdateWorkspaceDto })
-  @ApiResponse({ status: 200, description: 'Workspace updated successfully', type: WorkspaceDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Workspace updated successfully',
+    type: WorkspaceDto,
+  })
   @ApiResponse({ status: 404, description: 'Workspace not found' })
   async updateWorkspace(
     @Param('workspaceId') workspaceId: string,
-    @Body() updateDto: UpdateWorkspaceDto
+    @Body() updateDto: UpdateWorkspaceDto,
   ): Promise<Workspace> {
     const workspace = await this.db.updateWorkspace({
       workspaceId,
-      ...updateDto
+      ...updateDto,
     });
 
     if (!workspace) {
@@ -146,27 +211,38 @@ export class WorkspacesController {
   @Get(':workspaceId/files/:filename')
   @ApiOperation({
     summary: 'Read workspace file',
-    description: 'Read specific markdown files from the workspace directory (AGENTS.md)'
+    description:
+      'Read specific markdown files from the workspace directory (AGENTS.md)',
   })
-  @ApiParam({ name: 'workspaceId', description: 'Workspace ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({
+    name: 'workspaceId',
+    description: 'Workspace ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @ApiParam({
     name: 'filename',
     description: 'File name',
     enum: ['AGENTS.md'],
-    example: 'AGENTS.md'
+    example: 'AGENTS.md',
   })
-  @ApiResponse({ status: 200, description: 'File content', schema: { type: 'object', properties: { content: { type: 'string' } } } })
+  @ApiResponse({
+    status: 200,
+    description: 'File content',
+    schema: { type: 'object', properties: { content: { type: 'string' } } },
+  })
   @ApiResponse({ status: 404, description: 'Workspace or file not found' })
   @ApiResponse({ status: 400, description: 'Invalid filename' })
   async getWorkspaceFile(
     @Param('workspaceId') workspaceId: string,
-    @Param('filename') filename: string
+    @Param('filename') filename: string,
   ): Promise<{ content: string; filename: string }> {
     // Whitelist of allowed files
     const allowedFiles = ['AGENTS.md'];
 
     if (!allowedFiles.includes(filename)) {
-      throw new BadRequestException(`File ${filename} is not allowed. Allowed files: ${allowedFiles.join(', ')}`);
+      throw new BadRequestException(
+        `File ${filename} is not allowed. Allowed files: ${allowedFiles.join(', ')}`,
+      );
     }
 
     const workspace = await this.db.getWorkspace({ workspaceId });

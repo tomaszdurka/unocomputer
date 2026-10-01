@@ -10,15 +10,28 @@ import { FileText, Plus, Copy } from 'lucide-react';
 import InlineNameEditor from '#/components/InlineNameEditor';
 import NewSessionDialog from '#/components/sessions/NewSessionDialog';
 import { summariseSessions } from './sessionSummaries';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DataTable, Separator } from '@app/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  Separator,
+} from '@app/ui';
 import type { Column } from '@app/ui';
 
 const sessionStatusClass = (status: string) =>
-  status === 'success' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900' :
-  status === 'running' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900' :
-  status === 'failure' ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900' :
-  status === 'stopped' ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900' :
-  'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
+  status === 'success'
+    ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900'
+    : status === 'running'
+      ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900'
+      : status === 'failure'
+        ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-900'
+        : status === 'stopped'
+          ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900'
+          : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800';
 
 const sessionColumns: Column<WorkspaceSessionSummary>[] = [
   {
@@ -27,13 +40,17 @@ const sessionColumns: Column<WorkspaceSessionSummary>[] = [
     cell: (session) => (
       <div className="min-w-0">
         <p className="truncate font-medium">
-          {session.name || <span className="italic font-normal text-gray-500 dark:text-neutral-400">Unnamed</span>}
+          {session.name || (
+            <span className="italic font-normal text-gray-500 dark:text-neutral-400">
+              Unnamed
+            </span>
+          )}
         </p>
         <p className="mt-0.5 truncate font-mono text-[11px] text-gray-500 dark:text-neutral-400">
           {session.sessionId}
         </p>
       </div>
-    )
+    ),
   },
   {
     key: 'status',
@@ -43,28 +60,35 @@ const sessionColumns: Column<WorkspaceSessionSummary>[] = [
       <Badge variant="outline" className={sessionStatusClass(session.status)}>
         {session.status}
       </Badge>
-    )
+    ),
   },
   {
     key: 'runs',
     header: 'Runs',
     width: '110px',
     cell: (session) => (
-      <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900">
+      <Badge
+        variant="outline"
+        className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900"
+      >
         {session.runCount} run{session.runCount !== 1 ? 's' : ''}
       </Badge>
-    )
+    ),
   },
   {
     key: 'lastUsed',
     header: 'Last Activity',
     width: '220px',
     className: 'whitespace-nowrap text-gray-500 dark:text-neutral-400',
-    cell: (session) => session.lastUsed
-  }
+    cell: (session) => session.lastUsed,
+  },
 ];
 
-export default function WorkspaceDetailView({ workspace }: { workspace: Workspace }) {
+export default function WorkspaceDetailView({
+  workspace,
+}: {
+  workspace: Workspace;
+}) {
   const [showFilesDialog, setShowFilesDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState('AGENTS.md');
   const [fileContent, setFileContent] = useState<string>('');
@@ -89,7 +113,10 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
       const data = await getWorkspaceFile(workspace.workspaceId, filename);
       setFileContent(data.content);
     } catch (err: unknown) {
-      setFileError((err instanceof Error ? err.message : String(err)) || 'Failed to load file');
+      setFileError(
+        (err instanceof Error ? err.message : String(err)) ||
+          'Failed to load file',
+      );
       setFileContent('');
     } finally {
       setLoadingFile(false);
@@ -141,7 +168,9 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
             </div>
             {loadingFile ? (
               <div className="flex items-center justify-center py-12">
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Loading...</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Loading...
+                </div>
               </div>
             ) : fileError ? (
               <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-400">
@@ -152,25 +181,105 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({ ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h2: ({ ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h3: ({ ...props }) => <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h4: ({ ...props }) => <h4 className="text-base font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h5: ({ ...props }) => <h5 className="text-sm font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100" {...props} />,
-                    h6: ({ ...props }) => <h6 className="text-sm font-semibold mt-3 mb-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    p: ({ ...props }) => <p className="mb-4 text-gray-700 dark:text-neutral-300 leading-relaxed" {...props} />,
-                    ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-2 text-gray-700 dark:text-neutral-300" {...props} />,
-                    li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
-                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-gray-300 dark:border-neutral-700 pl-4 my-4 italic text-gray-600 dark:text-neutral-400" {...props} />,
+                    h1: ({ ...props }) => (
+                      <h1
+                        className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
+                    h2: ({ ...props }) => (
+                      <h2
+                        className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
+                    h3: ({ ...props }) => (
+                      <h3
+                        className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
+                    h4: ({ ...props }) => (
+                      <h4
+                        className="text-base font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
+                    h5: ({ ...props }) => (
+                      <h5
+                        className="text-sm font-semibold mt-3 mb-2 text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
+                    h6: ({ ...props }) => (
+                      <h6
+                        className="text-sm font-semibold mt-3 mb-2 text-gray-700 dark:text-neutral-300"
+                        {...props}
+                      />
+                    ),
+                    p: ({ ...props }) => (
+                      <p
+                        className="mb-4 text-gray-700 dark:text-neutral-300 leading-relaxed"
+                        {...props}
+                      />
+                    ),
+                    ul: ({ ...props }) => (
+                      <ul
+                        className="mb-4 ml-6 list-disc space-y-2 text-gray-700 dark:text-neutral-300"
+                        {...props}
+                      />
+                    ),
+                    ol: ({ ...props }) => (
+                      <ol
+                        className="mb-4 ml-6 list-decimal space-y-2 text-gray-700 dark:text-neutral-300"
+                        {...props}
+                      />
+                    ),
+                    li: ({ ...props }) => (
+                      <li className="leading-relaxed" {...props} />
+                    ),
+                    blockquote: ({ ...props }) => (
+                      <blockquote
+                        className="border-l-4 border-gray-300 dark:border-neutral-700 pl-4 my-4 italic text-gray-600 dark:text-neutral-400"
+                        {...props}
+                      />
+                    ),
                     code: ({ className, ...props }) =>
-                      className?.startsWith('language-')
-                        ? <code className={`block bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono ${className}`} {...props} />
-                        : <code className="bg-gray-100 dark:bg-neutral-800 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
-                    pre: ({ ...props }) => <pre className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
-                    a: ({ ...props }) => <a className="text-mint hover:underline font-medium" {...props} />,
-                    hr: ({ ...props }) => <hr className="my-6 border-gray-200 dark:border-neutral-800" {...props} />,
-                    strong: ({ ...props }) => <strong className="font-semibold text-gray-900 dark:text-neutral-100" {...props} />,
+                      className?.startsWith('language-') ? (
+                        <code
+                          className={`block bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono ${className}`}
+                          {...props}
+                        />
+                      ) : (
+                        <code
+                          className="bg-gray-100 dark:bg-neutral-800 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded text-sm font-mono"
+                          {...props}
+                        />
+                      ),
+                    pre: ({ ...props }) => (
+                      <pre
+                        className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg my-4 overflow-x-auto"
+                        {...props}
+                      />
+                    ),
+                    a: ({ ...props }) => (
+                      <a
+                        className="text-mint hover:underline font-medium"
+                        {...props}
+                      />
+                    ),
+                    hr: ({ ...props }) => (
+                      <hr
+                        className="my-6 border-gray-200 dark:border-neutral-800"
+                        {...props}
+                      />
+                    ),
+                    strong: ({ ...props }) => (
+                      <strong
+                        className="font-semibold text-gray-900 dark:text-neutral-100"
+                        {...props}
+                      />
+                    ),
                     em: ({ ...props }) => <em className="italic" {...props} />,
                   }}
                 >
@@ -215,16 +324,22 @@ export default function WorkspaceDetailView({ workspace }: { workspace: Workspac
                 )}
               </span>
             ) : (
-              <span className="ml-2 text-gray-500 dark:text-neutral-400">-</span>
+              <span className="ml-2 text-gray-500 dark:text-neutral-400">
+                -
+              </span>
             )}
           </p>
           <p>
             <span className="grid-label">Created:</span>{' '}
-            <span className="ml-2 text-gray-500 dark:text-neutral-400">{workspace.createdAt}</span>
+            <span className="ml-2 text-gray-500 dark:text-neutral-400">
+              {workspace.createdAt}
+            </span>
           </p>
           <p>
             <span className="grid-label">Updated:</span>{' '}
-            <span className="ml-2 text-gray-500 dark:text-neutral-400">{workspace.updatedAt}</span>
+            <span className="ml-2 text-gray-500 dark:text-neutral-400">
+              {workspace.updatedAt}
+            </span>
           </p>
           <Separator className="my-4" />
           <Button

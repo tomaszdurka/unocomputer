@@ -6,7 +6,14 @@ const push = jest.fn();
 const replace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace, back: jest.fn(), forward: jest.fn(), refresh: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({
+    push,
+    replace,
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
 }));

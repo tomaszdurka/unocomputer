@@ -10,7 +10,9 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
-type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+type DialogContentProps = React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> & {
   /** Accessible name. Required - Radix warns without it. Pass `srTitle` to hide it visually. */
   title: string;
   srTitle?: boolean;

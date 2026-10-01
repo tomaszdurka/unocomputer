@@ -11,7 +11,10 @@ import { sessionsDir } from './lib/session-storage';
 // admin proxies /api/* to it, so the browser only ever talks to the admin's single port.
 // For direct debugging: curl --unix-socket <socket> http://localhost/api/..., or bridge
 // with socat if a tool can't speak sockets.
-const defaultSocketPath = path.resolve(process.cwd(), '../../data/backend.sock');
+const defaultSocketPath = path.resolve(
+  process.cwd(),
+  '../../data/backend.sock',
+);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,12 +33,15 @@ async function bootstrap() {
   // Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('UnoComputer API')
-    .setDescription('REST API for Claude CLI with workspace isolation and persistence')
+    .setDescription(
+      'REST API for Claude CLI with workspace isolation and persistence',
+    )
     .setVersion('1.0')
     .addTag('runs', 'Claude run execution and querying')
-    .addTag('workspaces', 'Workspace management and querying')
+    .addTag('workspaces', 'Workspace management and querying');
   const document = SwaggerModule.createDocument(app, config.build(), {
-    operationIdFactory: (_controllerKey: string, methodKey: string) => methodKey,
+    operationIdFactory: (_controllerKey: string, methodKey: string) =>
+      methodKey,
   });
   // The API root serves its own docs: /api -> swagger UI, /api/openapi.json -> raw spec.
   SwaggerModule.setup('api', app, document, {

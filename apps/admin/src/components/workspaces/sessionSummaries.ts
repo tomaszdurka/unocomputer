@@ -1,4 +1,9 @@
-import type { Run, Session, Workspace, WorkspaceSessionSummary } from '#/lib/types';
+import type {
+  Run,
+  Session,
+  Workspace,
+  WorkspaceSessionSummary,
+} from '#/lib/types';
 
 /**
  * A session's standing, from its runs: anything still running wins, then a
@@ -21,7 +26,10 @@ export function summariseSessions(
   workspace: Pick<Workspace, 'sessions' | 'runs'>,
 ): WorkspaceSessionSummary[] {
   const runs = workspace.runs ?? [];
-  const sessions = new Map<string, Pick<Session, 'sessionId' | 'name' | 'createdAt'>>();
+  const sessions = new Map<
+    string,
+    Pick<Session, 'sessionId' | 'name' | 'createdAt'>
+  >();
 
   for (const session of workspace.sessions ?? []) {
     sessions.set(session.sessionId, session);
@@ -40,13 +48,15 @@ export function summariseSessions(
     runsBySession.set(run.sessionId, list);
   }
 
-  const time = (value: string | null | undefined) => Date.parse(value ?? '') || 0;
+  const time = (value: string | null | undefined) =>
+    Date.parse(value ?? '') || 0;
 
   return Array.from(sessions.values())
     .map((session) => {
       const own = runsBySession.get(session.sessionId) ?? [];
       const lastRun = own.reduce<string | null>(
-        (latest, run) => (time(run.startedAt) > time(latest) ? run.startedAt : latest),
+        (latest, run) =>
+          time(run.startedAt) > time(latest) ? run.startedAt : latest,
         null,
       );
       return {

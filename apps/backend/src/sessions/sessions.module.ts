@@ -4,10 +4,7 @@ import { ClaudeModule } from '../claude/claude.module';
 import { SessionsController } from './sessions.controller';
 
 @Module({
-  imports: [
-    PersistenceModule,
-    forwardRef(() => ClaudeModule),
-  ],
+  imports: [PersistenceModule, forwardRef(() => ClaudeModule)],
   controllers: [SessionsController],
 })
 export class SessionsModule {}
