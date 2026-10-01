@@ -11,7 +11,7 @@
 - 🔄 Two response modes: buffered JSON or streaming JSONL
 - 📝 JSON schema validation for structured outputs
 - 🔁 Session management for conversation continuity
-- 💾 SQLite persistence with MikroORM
+- 💾 SQLite persistence with Prisma
 - 🎨 Next.js 16 dashboard UI for monitoring and management
 - 📊 Built-in state tracking across runs
 
