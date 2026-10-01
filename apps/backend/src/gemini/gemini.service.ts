@@ -47,10 +47,6 @@ export class GeminiService {
       '--yolo',
     );
 
-    // Add schema if provided
-    if (outputSchema) {
-      // args.push('--response-schema', JSON.stringify(outputSchema));
-    }
     // Strip environment variables to avoid nesting issues
     const env = { ...process.env, ...options.env };
     this.logger.log(`gemini ${args.join(' ')}`);
