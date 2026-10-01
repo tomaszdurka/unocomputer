@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push supersedes whatever was still running for the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Must come before setup-node, which needs pnpm on PATH to cache its store.
+      # The version comes from the root packageManager field, so it cannot drift.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # The backend's postinstall runs `prisma generate`; without the generated client
+      # neither typecheck nor the tests can resolve @prisma/client.
+      - run: pnpm install --frozen-lockfile
+
+      # format:check, then lint + typecheck + tests in every package.
+      - run: pnpm quality
+
+      - run: pnpm build
+
+  deploy-script:
+    name: Deploy script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # There is nothing to deploy to - this app is installed onto a developer's own
+      # machine by scripts/deploy-local.sh (launchd + Caddy), so the deployment path is
+      # a shell script rather than a pipeline. Checking it here is the only automated
+      # guard it can have: the script is not exercised until someone runs a real deploy.
+      - run: shellcheck scripts/deploy-local.sh

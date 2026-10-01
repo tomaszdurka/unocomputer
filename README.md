@@ -1,5 +1,7 @@
 # UnoComputer 🎯
 
+[![CI](https://github.com/tomaszdurka/unocomputer/actions/workflows/ci.yml/badge.svg)](https://github.com/tomaszdurka/unocomputer/actions/workflows/ci.yml)
+
 > Local Model API with Claude CLI integration and workspace isolation
 
 **UnoComputer** is a TypeScript + NestJS API server that enables programmatic execution of Claude CLI commands with structured JSON output.
