@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { createValidationPipe } from './validation';
 import * as fs from 'fs';
 import * as path from 'path';
 import { sessionsDir } from './lib/session-storage';
@@ -23,14 +23,9 @@ async function bootstrap() {
   // admin proxies through to the socket.
   app.setGlobalPrefix('api');
 
-  // Enable validation globally
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  // Enable validation globally. Defined in one place so the controller tests can run
+  // the exact same pipe - see src/validation.ts.
+  app.useGlobalPipes(createValidationPipe());
 
   // Setup Swagger
   const config = new DocumentBuilder()
