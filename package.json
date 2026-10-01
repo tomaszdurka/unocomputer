@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm -r run lint",
-    "quality": "pnpm -r run quality",
+    "quality": "pnpm format:check && pnpm -r run quality",
     "start": "pnpm --parallel -r run start",
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck"
