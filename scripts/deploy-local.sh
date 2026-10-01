@@ -34,7 +34,6 @@ set -euo pipefail
 #   brew services start caddy
 
 cd "$(dirname "$0")/.."
-ROOT="$(pwd)"
 APP_NAME="$(node -p "require('./package.json').name")"
 PREFIX="$HOME/Library/Application Support/$APP_NAME"
 DATA_DIR="$PREFIX/data"
@@ -208,8 +207,9 @@ JSON
     echo "    pre-Prisma database detected - converting json columns and baselining"
     cp "$DB_FILE" "$DB_FILE.pre-prisma.bak"
     sqlite3 "$DB_FILE" < apps/backend/prisma/baseline/json-columns-to-text.sql
+    init_migrations=(apps/backend/prisma/migrations/*_init)
     DATABASE_URL="$DATABASE_URL_PROD" pnpm --filter backend exec \
-      prisma migrate resolve --applied "$(basename "$(ls -d apps/backend/prisma/migrations/*_init | head -1)")"
+      prisma migrate resolve --applied "$(basename "${init_migrations[0]}")"
     echo "    backup kept at $DB_FILE.pre-prisma.bak"
   fi
 
@@ -255,7 +255,7 @@ BACKEND_SOCKET=$SOCKET_PATH_PROD" \
   fi
 
   echo "==> Waiting for health"
-  for i in $(seq 1 30); do
+  for _ in $(seq 1 30); do
     # / is a 307 to /runs, so probe /runs directly rather than the root.
     b="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$ADMIN_PORT/api/openapi.json" || true)"
     a="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$ADMIN_PORT/runs" || true)"
