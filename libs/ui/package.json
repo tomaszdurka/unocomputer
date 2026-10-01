@@ -13,6 +13,9 @@
     "next": "*",
     "react": "*"
   },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "lint": "eslint .",
     "quality": "pnpm lint && pnpm typecheck",

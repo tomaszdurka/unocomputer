@@ -2,6 +2,9 @@
   "name": "admin",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev -p ${PORT:-0}",

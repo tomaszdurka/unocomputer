@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "UnoComputer API - Local Model API with workspace isolation",
   "main": "dist/main.js",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
@@ -39,12 +42,15 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",
+    "@nestjs/testing": "^11.2.7",
     "@types/express": "^4.17.21",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.11.16",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "^9.0.7",
     "jest": "^30.5.1",
     "prisma": "^6.19.3",
+    "supertest": "^7.3.0",
     "ts-jest": "^29.4.12",
     "tsx": "^4.7.0"
   }
