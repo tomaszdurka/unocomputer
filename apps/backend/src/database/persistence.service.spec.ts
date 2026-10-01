@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PersistenceService } from './persistence.service';
 import { RunStatus } from './run-status';
@@ -232,11 +233,16 @@ describe('PersistenceService JSON boundary', () => {
     expect(call!.args.data.status).toBe(RunStatus.STOPPED);
   });
 
-  it('never lets a storeEvent failure escape into the run', async () => {
+  it('never lets a storeEvent failure escape into the run, but does record it', async () => {
+    // Swallowing is deliberate: a lost event must not abort the run the user is watching.
+    // Swallowing *silently* would be a bug, so the log line is part of the contract.
+    const logged = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     prisma.runEvent.create = () => Promise.reject(new Error('db gone')) as never;
     await expect(
       service.storeEvent({ runId: 'r1', sequence: 1, event: { type: 'text' } }),
     ).resolves.toBeUndefined();
+    expect(logged).toHaveBeenCalledWith(expect.stringContaining('r1'), expect.anything());
+    logged.mockRestore();
   });
 
   it('records a workspace over a directory without touching the filesystem', async () => {
