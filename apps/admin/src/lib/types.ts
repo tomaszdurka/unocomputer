@@ -5,7 +5,8 @@
 // these go away and the generated types take over - which is the point of keeping them
 // in one file rather than scattered through the components.
 
-export type RunStatus = 'running' | 'success' | 'failure' | 'stopped';
+export type RunStatus =
+  'running' | 'success' | 'failure' | 'stopped' | 'interrupted';
 
 export type Workspace = {
   workspaceId: string;

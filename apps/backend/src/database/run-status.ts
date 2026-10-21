@@ -6,6 +6,12 @@ export enum RunStatus {
   SUCCESS = 'success',
   FAILURE = 'failure',
   STOPPED = 'stopped',
+  /**
+   * The CLI ended the turn without an answer for a reason outside it - the
+   * API unreachable, a rate limit - after its own retries. The session is
+   * intact: the next run in it picks up where this one stopped.
+   */
+  INTERRUPTED = 'interrupted',
 }
 
 export const RUN_STATUSES = Object.values(RunStatus);

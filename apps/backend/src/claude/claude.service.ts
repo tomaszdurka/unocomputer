@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import { Run } from '../database/types';
 import { executeCommandWithJsonStreamOutput } from '../lib/executeCommandWithJsonStreamOutput';
 import { RunOptions, RunResult } from '../runs/dto/run-options';
+import { turnOutcome } from './outcome';
 
 @Injectable()
 export class ClaudeService {
@@ -76,15 +77,24 @@ export class ClaudeService {
       env,
       onLine: (event: CliEvent) => {
         if (event.type === 'result' || event.type === 'result_success') {
-          result = {
-            result:
-              typeof event.result === 'string'
-                ? event.result
-                : JSON.stringify(event.result ?? null),
-            ...(event.structured_output !== undefined
-              ? { structuredResult: event.structured_output }
-              : {}),
-          };
+          const text =
+            typeof event.result === 'string'
+              ? event.result
+              : JSON.stringify(event.result ?? null);
+          // A turn that ended without an answer carries no structured
+          // result, whatever the event says: the error text is not one.
+          const outcome = turnOutcome(event);
+          result =
+            outcome.kind === 'answered'
+              ? {
+                  result: text,
+                  ...(event.structured_output !== undefined
+                    ? { structuredResult: event.structured_output }
+                    : {}),
+                }
+              : outcome.kind === 'interrupted'
+                ? { result: text, interrupted: outcome.message }
+                : { result: text, error: outcome.message };
         }
         options.onOutput?.(event);
       },

@@ -101,7 +101,7 @@ List runs, newest first, **a page at a time**.
 - `page` - 1-based, default `1`
 - `pageSize` - default `100`, maximum `100`
 - `tag` - repeatable; a run must carry EVERY tag given (AND)
-- `status` - `running` | `success` | `failure` | `stopped`
+- `status` - `running` | `success` | `failure` | `stopped` | `interrupted`
 
 **Response** - a page, not a bare array. `total` counts everything matching the
 filter, so paging through a filtered query works:
@@ -293,6 +293,27 @@ Each line is a JSON object representing an event:
 - **start**: Initial event sent by the controller with `workspaceId`, `runId`, and `timestamp`
 - **All Claude CLI events**: Forwarded directly from Claude CLI's `--output-format stream-json`, with added `workspaceId`, `runId`, and `timestamp` fields
   - Common types: `thinking`, `text`, `result`, `result_success`, `tool_use`, etc.
+
+#### How a turn ends
+
+The last line of either mode is the run's result: `result` (the CLI's final
+text) and `structuredResult` when the run asked for a schema and the turn
+answered. The run's `status` says how the turn ended, and the exit code does
+not: the CLI exits 0 for all three.
+
+- **success** - the turn answered.
+- **interrupted** - the turn ended without an answer for a reason outside it,
+  after the CLI's own retries: the API could not be reached, a rate limit, an
+  overload. The CLI says so on its final `result` event (`is_error` with
+  `terminal_reason: api_error` and the like, or an "API Error" text), and Uno
+  passes its words on as `interrupted`. There is no `structuredResult`, whatever
+  the event carried. The session is intact: a later run with the same
+  `sessionId` resumes the conversation where it stopped, and that is how a
+  caller picks the work up. Uno does not retry on its own - when to try again
+  is the caller's to decide.
+- **failure** - the CLI ended the turn with an error of its own (`is_error`
+  for any other reason), passed on as `error`.
+- **stopped** - Uno ended it, at shutdown or on request.
 
 ## Workspace Management
 

@@ -78,11 +78,18 @@ export class RunsService {
       },
     });
 
+    // The status says how the turn ended: answered, interrupted by something
+    // outside it, or failed by the CLI itself. Not the exit code, which is 0
+    // for all three.
     await this.persistence.setStatus({
       runId,
       result,
       exitCode: 0,
-      status: RunStatus.SUCCESS,
+      status: result.interrupted
+        ? RunStatus.INTERRUPTED
+        : result.error
+          ? RunStatus.FAILURE
+          : RunStatus.SUCCESS,
     });
 
     return result;

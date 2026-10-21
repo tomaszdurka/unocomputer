@@ -7,12 +7,14 @@ import type {
 
 /**
  * A session's standing, from its runs: anything still running wins, then a
- * failure, then a stop; all green is success; no runs at all is idle.
+ * failure, then an interruption, then a stop; all green is success; no runs
+ * at all is idle.
  */
 function statusOf(runs: Run[]): WorkspaceSessionSummary['status'] {
   if (runs.length === 0) return 'idle';
   if (runs.some((run) => run.status === 'running')) return 'running';
   if (runs.some((run) => run.status === 'failure')) return 'failure';
+  if (runs.some((run) => run.status === 'interrupted')) return 'interrupted';
   if (runs.some((run) => run.status === 'stopped')) return 'stopped';
   return 'success';
 }
