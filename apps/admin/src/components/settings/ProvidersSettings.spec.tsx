@@ -78,7 +78,9 @@ describe('ProvidersSettings', () => {
     render(<ProvidersSettings />);
     expect(await screen.findByText('Claude Code')).toBeTruthy();
     expect(screen.getByText('/opt/homebrew/bin/claude')).toBeTruthy();
-    expect(screen.getByText('Not installed')).toBeTruthy();
+    expect(
+      within(screen.getByRole('table')).getByText('Not installed'),
+    ).toBeTruthy();
     expect(screen.getByText('no devin on PATH')).toBeTruthy();
   });
 
@@ -113,9 +115,7 @@ describe('ProvidersSettings', () => {
     expect(
       rows.map((r) => within(r).getByText(/^(devin|claude|codex)/).textContent),
     ).toEqual(['devin', 'claude', 'codex']);
-    expect(
-      within(rows[0]).getByText(/Skipped: no "devin" on PATH/),
-    ).toBeTruthy();
+    expect(within(rows[0]).getByText('Not installed')).toBeTruthy();
     expect(within(rows[1]).getByText('Will be used')).toBeTruthy();
   });
 
