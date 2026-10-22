@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, DataTable, type Column } from '@app/ui';
-import { Switch } from '@app/ui/switch';
 import {
   ApiError,
   listProviders,
@@ -99,6 +98,37 @@ export default function ProvidersSettings() {
       ),
     },
     {
+      key: 'enabled',
+      header: 'Enabled',
+      cell: (p) => (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={p.enabled}
+          aria-label={`${p.label} enabled`}
+          disabled={busy === p.id}
+          onClick={() => void toggle(p, !p.enabled)}
+          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-50 dark:focus-visible:ring-neutral-500"
+        >
+          {p.enabled ? (
+            <Badge
+              variant="outline"
+              className="cursor-pointer bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
+            >
+              Enabled
+            </Badge>
+          ) : (
+            <Badge
+              variant="muted"
+              className="cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-700"
+            >
+              Disabled
+            </Badge>
+          )}
+        </button>
+      ),
+    },
+    {
       key: 'available',
       header: 'Available',
       cell: (p) =>
@@ -131,21 +161,6 @@ export default function ProvidersSettings() {
         p.pinnable && p.models.length
           ? p.models.map((m) => `${p.id}:${m}`).join(', ')
           : 'CLI default',
-    },
-    {
-      key: 'enabled',
-      header: 'Enabled',
-      width: '90px',
-      headerClassName: 'text-right',
-      className: 'text-right',
-      cell: (p) => (
-        <Switch
-          aria-label={`${p.label} enabled`}
-          checked={p.enabled}
-          disabled={busy === p.id}
-          onCheckedChange={(enabled) => void toggle(p, enabled)}
-        />
-      ),
     },
   ];
 
