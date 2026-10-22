@@ -8,7 +8,8 @@
 
 ## Features
 
-- 🚀 Execute Claude CLI commands via REST API
+- 🚀 Drive Claude Code, Codex, Gemini CLI or Devin via REST API
+- 🔌 Providers settings: see which CLIs are installed, switch them on or off, pick the default model
 - 📦 Automatic workspace isolation with persistent sessions
 - 🔄 Two response modes: buffered JSON or streaming JSONL
 - 📝 JSON schema validation for structured outputs

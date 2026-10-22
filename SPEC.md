@@ -191,6 +191,65 @@ Get workspace details with its `sessions` (newest first, including ones without 
 
 Rename a workspace: `{ "name": "string | null" }`.
 
+#### `GET /providers`
+
+Every CLI UnoComputer can drive, with its live state. `available` means the
+binary is on the backend's PATH (under launchd that is the pinned
+`SERVICE_PATH`, not a login shell's), `enabled` means it is not switched off in
+settings. The admin builds its model picker from this list and the settings page
+is a view of it.
+
+```json
+[
+  {
+    "id": "claude",
+    "label": "Claude Code",
+    "binary": "claude",
+    "pinnable": true,
+    "models": ["sonnet", "haiku", "opus", "fable"],
+    "available": true,
+    "path": "/opt/homebrew/bin/claude",
+    "enabled": true
+  },
+  { "id": "codex", "...": "..." },
+  { "id": "gemini", "...": "..." },
+  { "id": "devin", "...": "..." }
+]
+```
+
+`pinnable` says whether `"<id>:<model>"` pins the CLI's model (`--model`).
+`models` are suggestions for the picker, not a whitelist: the CLI decides what
+it accepts.
+
+#### `PATCH /providers/:id`
+
+Body `{ "enabled": boolean }`. A disabled provider is refused at run creation
+with a 400 that says so. The provider of the default model cannot be disabled
+(400); change the default first. Unknown id: 404.
+
+#### `GET /settings`
+
+```json
+{ "defaultModel": "claude" }
+```
+
+The model a run gets when it names none and its session has no previous run.
+Unset means the first provider in the registry, `claude`.
+
+#### `PATCH /settings`
+
+Body `{ "defaultModel": "<provider>" | "<provider>:<model>" }`. The provider
+must exist and be enabled; it need not be installed yet, so a machine can be
+configured before its CLIs are. Otherwise 400 with the reason.
+
+#### How a run's model is settled
+
+At creation, before any row exists: the request's `model`, else the session's
+last run's model, else `defaultModel`. The result is stored on the run, so
+`run.model` is always set for runs made since. A model naming an unknown,
+disabled or uninstalled provider is a 400 at submit - not a run that dies on
+spawn.
+
 ### Legacy Endpoint: `POST /runs/claude`
 
 #### Request Headers
@@ -398,9 +457,19 @@ src/
 ├── main.ts                    # Bootstrap NestJS application
 ├── app.module.ts              # Root module (imports RunsModule, ConfigModule)
 ├── types.ts                   # Shared types (StreamEvent)
-├── claude/
-│   ├── claude.module.ts       # Claude module (exports ClaudeService)
-│   └── claude.service.ts      # Claude CLI execution logic
+├── claude/                    # One folder per provider; each exports a service
+│   ├── claude.module.ts       #   with run(options): Promise<RunResult>
+│   └── claude.service.ts      # claude -p ... --output-format stream-json
+├── codex/                     # codex exec ... --json
+├── gemini/                    # gemini --prompt ... --output-format stream-json
+├── devin/                     # devin --print ... (plain text; see DevinService)
+├── providers/
+│   ├── registry.ts            # The providers: id, label, binary, suggested models
+│   ├── which.ts               # PATH lookup, what `which <binary>` answers
+│   ├── providers.service.ts   # Availability + enabled state; settles a run's model
+│   └── providers.controller.ts # GET/PATCH /providers, GET/PATCH /settings
+├── settings/
+│   └── settings.service.ts    # Typed access to the `setting` key/value table
 ├── workspaces/
 │   ├── workspaces.controller.ts # Workspace CRUD operations
 │   └── dto/
@@ -486,6 +555,42 @@ claude --continue -p "What is 2+2?" --output-format stream-json --verbose --perm
 ```
 
 **Note:** The `--continue` flag allows the Claude CLI to resume from previous runs in the same workspace.
+
+#### DevinService
+
+**Purpose:** Drives Devin's CLI in print mode. Unlike the other three, Devin
+prints plain text rather than stream-json, so each stdout line becomes a `text`
+event on the timeline and the whole stdout is the answer. Structured output
+uses the same `<STRUCTURED>...</STRUCTURED>` convention as Gemini.
+
+**Continuity:** Devin names its own sessions and only `devin list` in the
+session's folder reveals them. The first run plants `[SESSION-ID=<uno session>]`
+at the top of its prompt; afterwards `devin list --format json` is read in the
+workspace folder and the session titled with that marker (else the newest one
+there) is recorded under `SESSIONS_DIR/devin/<sessionId>/session-id`. Later runs
+pass it to `--resume`.
+
+**Command Construction:**
+
+```bash
+# first run
+devin --permission-mode dangerous --respect-workspace-trust false --print -- "[SESSION-ID=abc-123]\nWhat is 2+2?"
+# subsequent run, optionally pinning the model ("devin:opus")
+devin --permission-mode dangerous --respect-workspace-trust false --resume brisk-otter --model opus --print -- "Continue"
+```
+
+`--respect-workspace-trust false` is required: print mode cannot show Devin's
+trust prompt and fails in an untrusted folder, which every Uno workspace is.
+`devin auth login` must have been run once on the machine; the CLI is on
+Homebrew as `brew install --cask devin-cli`.
+
+#### ProvidersService
+
+**Purpose:** The one place that knows which providers exist (`registry.ts`),
+whether each is installed (`which()` over the backend's PATH) and enabled
+(`SettingsService`), and what model a run gets. `resolveModel(requested,
+inherited)` is called by `RunsController` at creation; it throws a
+`ProviderError` with a message written for the caller, which becomes the 400.
 
 #### RunsController
 
