@@ -12,7 +12,7 @@
     "quality": "pnpm lint && pnpm typecheck && pnpm test",
     "start": "next start -p ${PORT:-0}",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@app/ui": "workspace:*",
