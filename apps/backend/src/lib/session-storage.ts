@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Session, Workspace } from '../database/types';
 
-export type SessionProvider = 'codex' | 'gemini';
+export type SessionProvider = 'codex' | 'gemini' | 'devin';
 
 /**
  * Where Uno keeps what it needs to resume a CLI's conversation: SESSIONS_DIR, or
