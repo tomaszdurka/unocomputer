@@ -11,6 +11,7 @@ const config = {
     '^@app/ui/dialog$': '<rootDir>/../../libs/ui/src/Dialog.tsx',
     '^@app/ui/popover$': '<rootDir>/../../libs/ui/src/Popover.tsx',
     '^@app/ui/select$': '<rootDir>/../../libs/ui/src/Select.tsx',
+    '^@app/ui/switch$': '<rootDir>/../../libs/ui/src/Switch.tsx',
     // react-markdown is ESM-only; map it to a tiny mock so jsdom tests can run
     '^react-markdown$': '<rootDir>/src/test/react-markdown.mock.tsx',
     '^remark-gfm$': '<rootDir>/src/test/remark-gfm.mock.ts',
