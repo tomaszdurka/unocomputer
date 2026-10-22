@@ -32,16 +32,22 @@ export class SettingsService {
   }
 
   /**
-   * The model a run gets when neither the request nor the session names one.
+   * The models a run gets when neither the request nor the session names one,
+   * in order of preference: the first whose provider is enabled and installed
+   * is used, so one being out moves a run to the next. Entries are
    * "<provider>" or "<provider>:<model>", validated by ProvidersService before
-   * it is stored. Unset means the first provider in the registry.
+   * they are stored. Unset means the registry's order; a `defaultModel` stored
+   * before this existed reads as the head of that list.
    */
-  getDefaultModel(): Promise<string | null> {
-    return this.read<string | null>('defaultModel', null);
+  async getModelPreferences(): Promise<string[] | null> {
+    const stored = await this.read<string[] | null>('modelPreferences', null);
+    if (stored) return stored;
+    const legacy = await this.read<string | null>('defaultModel', null);
+    return legacy ? [legacy] : null;
   }
 
-  setDefaultModel(model: string): Promise<void> {
-    return this.write('defaultModel', model);
+  setModelPreferences(models: string[]): Promise<void> {
+    return this.write('modelPreferences', models);
   }
 
   /** Every provider is enabled until someone turns it off. */

@@ -32,10 +32,10 @@ export class RunsService {
       return this.claudeService.run({ ...options, cliModel });
     }
     if (provider === 'gemini') {
-      return this.geminiService.run(options);
+      return this.geminiService.run({ ...options, cliModel });
     }
     if (provider === 'codex') {
-      return this.codexService.run(options);
+      return this.codexService.run({ ...options, cliModel });
     }
     if (provider === 'devin') {
       return this.devinService.run({ ...options, cliModel });
@@ -67,7 +67,7 @@ export class RunsService {
     // Runs created since the providers settings exist carry their resolved
     // model; this is for rows that predate it.
     if (!model) {
-      model = await this.providers.defaultModel();
+      ({ model } = await this.providers.resolveModel(undefined, null));
     }
 
     let sequence = 0;

@@ -104,20 +104,27 @@ export type Provider = {
 };
 
 export type AppSettings = {
-  /** Model for runs that name none: "<provider>" or "<provider>:<model>". */
-  defaultModel: string;
+  /**
+   * Models for runs that name none, in order of preference: the first whose
+   * provider is enabled and installed is used. "<provider>" or "<provider>:<model>".
+   */
+  modelPreferences: string[];
+  /** The preference a run would get right now; null when none is usable. */
+  effectiveModel: string | null;
+  /** Preferences passed over, and why. */
+  skipped: { model: string; reason: string }[];
 };
 
+/** A provider's models as run names: itself, then its pinned variants. */
+export function modelNames(p: Provider): string[] {
+  return [p.id, ...(p.pinnable ? p.models.map((m) => `${p.id}:${m}`) : [])];
+}
+
 /**
- * What the model picker offers: each usable provider plus its pinned variants,
- * in registry order. A provider that is off or not installed is left out, so
- * the picker cannot offer a run the backend would refuse.
+ * What the run dialog suggests: every usable provider's models, in registry
+ * order. A provider that is off or not installed is left out, so the picker
+ * cannot offer a run the backend would refuse.
  */
 export function modelChoices(providers: Provider[]): string[] {
-  return providers
-    .filter((p) => p.enabled && p.available)
-    .flatMap((p) => [
-      p.id,
-      ...(p.pinnable ? p.models.map((m) => `${p.id}:${m}`) : []),
-    ]);
+  return providers.filter((p) => p.enabled && p.available).flatMap(modelNames);
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, DataTable, type Column } from '@app/ui';
+import { Badge, Button, DataTable, type Column } from '@app/ui';
 import {
   ApiError,
   listProviders,
@@ -9,12 +9,15 @@ import {
   updateProvider,
   updateSettings,
 } from '#/lib/api';
-import { modelChoices, type AppSettings, type Provider } from '#/lib/types';
+import { modelNames, type AppSettings, type Provider } from '#/lib/types';
 
 /**
- * One row per provider the backend knows: whether its CLI is on the backend's
- * PATH, and whether it is switched on. Above it, the model runs get when they
- * name none. Every change is saved as it is made; there is no form.
+ * Which CLIs a run can go to, and in what order a run that names none tries
+ * them. Every change is saved as it is made; there is no form.
+ *
+ * The preference list is the whole story of "the default": a run takes the
+ * first entry whose provider is enabled and installed, so switching a provider
+ * off never strands anything - it just moves a run down the list.
  */
 export default function ProvidersSettings() {
   const [providers, setProviders] = useState<Provider[] | null>(null);
@@ -47,6 +50,8 @@ export default function ProvidersSettings() {
       setProviders((list) =>
         list ? list.map((p) => (p.id === updated.id ? updated : p)) : list,
       );
+      // Which preference is effective may have changed with it.
+      setSettings(await getSettings());
       setError(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not update provider');
@@ -55,15 +60,13 @@ export default function ProvidersSettings() {
     }
   };
 
-  const chooseDefault = async (defaultModel: string) => {
-    setBusy('default');
+  const savePreferences = async (modelPreferences: string[]) => {
+    setBusy('preferences');
     try {
-      setSettings(await updateSettings({ defaultModel }));
+      setSettings(await updateSettings({ modelPreferences }));
       setError(null);
     } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'Could not update the default',
-      );
+      setError(e instanceof ApiError ? e.message : 'Could not save the order');
     } finally {
       setBusy(null);
     }
@@ -77,12 +80,29 @@ export default function ProvidersSettings() {
     );
   }
 
-  const choices = modelChoices(providers);
-  // The stored default stays selectable even if its provider is now off or
-  // missing, so the picker never silently shows something other than the truth.
-  const options = choices.includes(settings.defaultModel)
-    ? choices
-    : [settings.defaultModel, ...choices];
+  const prefs = settings.modelPreferences;
+  const move = (index: number, by: -1 | 1) => {
+    const next = [...prefs];
+    const [item] = next.splice(index, 1);
+    next.splice(index + by, 0, item);
+    void savePreferences(next);
+  };
+  const remove = (index: number) => {
+    void savePreferences(prefs.filter((_, i) => i !== index));
+  };
+  const add = (model: string) => {
+    if (model && !prefs.includes(model))
+      void savePreferences([...prefs, model]);
+  };
+
+  // Everything known that is not yet in the order, usable or not: the order
+  // exists precisely to skip the ones that are not.
+  const addable = providers
+    .flatMap(modelNames)
+    .filter((model) => !prefs.includes(model));
+  const skippedReason = new Map(
+    settings.skipped.map((s) => [s.model, s.reason]),
+  );
 
   const columns: Column<Provider>[] = [
     {
@@ -156,16 +176,18 @@ export default function ProvidersSettings() {
     {
       key: 'models',
       header: 'Models',
-      className: 'text-gray-600 dark:text-neutral-300',
-      cell: (p) =>
-        p.pinnable && p.models.length
-          ? p.models.map((m) => `${p.id}:${m}`).join(', ')
-          : 'CLI default',
+      cell: (p) => (
+        <ul className="space-y-0.5 font-mono text-xs text-gray-600 dark:text-neutral-300">
+          {modelNames(p).map((model) => (
+            <li key={model}>{model}</li>
+          ))}
+        </ul>
+      ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {error ? (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
@@ -174,32 +196,11 @@ export default function ProvidersSettings() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">Default model</h2>
-          <p className="text-sm text-gray-500 dark:text-neutral-400">
-            What a run uses when it names no model and its session has none yet.
-          </p>
-        </div>
-        <select
-          aria-label="Default model"
-          value={settings.defaultModel}
-          disabled={busy === 'default'}
-          onChange={(e) => void chooseDefault(e.target.value)}
-          className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          {options.map((model) => (
-            <option key={model} value={model}>
-              {model}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      <section className="space-y-3">
-        <div>
           <h2 className="text-sm font-medium">Providers</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400">
             Available means the CLI is on the backend&apos;s PATH. A provider
-            that is off is refused when a run asks for it.
+            that is off is refused when a run asks for it by name, and skipped
+            by the order below.
           </p>
         </div>
         <DataTable
@@ -208,6 +209,95 @@ export default function ProvidersSettings() {
           rowKey={(p) => p.id}
           empty="The backend knows no providers."
         />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium">Model preference</h2>
+          <p className="text-sm text-gray-500 dark:text-neutral-400">
+            What a run uses when it names no model and its session has none yet:
+            the first entry whose provider is enabled and installed.
+          </p>
+        </div>
+        <ol
+          aria-label="Model preference"
+          className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          {prefs.map((model, index) => {
+            const reason = skippedReason.get(model);
+            const effective = model === settings.effectiveModel;
+            return (
+              <li
+                key={model}
+                className="flex items-center gap-3 px-4 py-2 text-sm"
+              >
+                <span className="w-5 text-right text-xs text-gray-400 dark:text-neutral-500">
+                  {index + 1}
+                </span>
+                <span className="flex-1 font-mono">{model}</span>
+                {effective ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  >
+                    Will be used
+                  </Badge>
+                ) : reason ? (
+                  <Badge variant="muted" title={reason}>
+                    Skipped: {reason}
+                  </Badge>
+                ) : null}
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Move ${model} up`}
+                    disabled={index === 0 || busy === 'preferences'}
+                    onClick={() => move(index, -1)}
+                  >
+                    ↑
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Move ${model} down`}
+                    disabled={
+                      index === prefs.length - 1 || busy === 'preferences'
+                    }
+                    onClick={() => move(index, 1)}
+                  >
+                    ↓
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Remove ${model}`}
+                    disabled={prefs.length === 1 || busy === 'preferences'}
+                    onClick={() => remove(index)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+        {addable.length ? (
+          <select
+            aria-label="Add to the order"
+            value=""
+            disabled={busy === 'preferences'}
+            onChange={(e) => add(e.target.value)}
+            className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm dark:border-neutral-800 dark:bg-neutral-900"
+          >
+            <option value="">Add a model to the order...</option>
+            {addable.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
+        ) : null}
       </section>
     </div>
   );

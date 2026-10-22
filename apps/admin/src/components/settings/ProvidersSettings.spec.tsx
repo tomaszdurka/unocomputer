@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import ProvidersSettings from './ProvidersSettings';
 import {
   ApiError,
@@ -7,7 +13,7 @@ import {
   updateProvider,
   updateSettings,
 } from '#/lib/api';
-import type { Provider } from '#/lib/types';
+import type { AppSettings, Provider } from '#/lib/types';
 
 jest.mock('#/lib/api', () => {
   const actual = jest.requireActual('#/lib/api');
@@ -51,14 +57,19 @@ const codex = provider({
   label: 'Codex',
   binary: 'codex',
   path: '/opt/homebrew/bin/codex',
-  pinnable: false,
-  models: [],
+  models: ['o3'],
 });
+
+const initial: AppSettings = {
+  modelPreferences: ['devin', 'claude', 'codex'],
+  effectiveModel: 'claude',
+  skipped: [{ model: 'devin', reason: 'no "devin" on PATH' }],
+};
 
 describe('ProvidersSettings', () => {
   beforeEach(() => {
     list.mockReset().mockResolvedValue([claude, codex, devin]);
-    settings.mockReset().mockResolvedValue({ defaultModel: 'claude' });
+    settings.mockReset().mockResolvedValue(initial);
     patchProvider.mockReset();
     patchSettings.mockReset();
   });
@@ -71,62 +82,119 @@ describe('ProvidersSettings', () => {
     expect(screen.getByText('no devin on PATH')).toBeTruthy();
   });
 
-  it('offers only usable models as the default, plus whatever is stored', async () => {
-    settings.mockResolvedValue({ defaultModel: 'devin:opus' });
+  it("lists a provider's models one per line", async () => {
     render(<ProvidersSettings />);
-    const select = (await screen.findByLabelText(
-      'Default model',
-    )) as HTMLSelectElement;
-    const options = Array.from(select.options).map((o) => o.value);
-    // devin is not installed, so it is not offered - but the stored default stays visible.
-    expect(options).toEqual(['devin:opus', 'claude', 'claude:sonnet', 'codex']);
-    expect(select.value).toBe('devin:opus');
+    await screen.findByText('Claude Code');
+    const row = screen.getByText('Claude Code').closest('tr')!;
+    const items = within(row)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent);
+    expect(items).toEqual(['claude', 'claude:sonnet']);
   });
 
-  it('saves a toggle as it is made', async () => {
-    patchProvider.mockResolvedValue({ ...devin, enabled: false });
+  it('shows the order, which entry will be used, and why others are skipped', async () => {
     render(<ProvidersSettings />);
-    const toggle = await screen.findByRole('switch', { name: 'Devin enabled' });
-    expect(toggle.getAttribute('aria-checked')).toBe('true');
-    fireEvent.click(toggle);
-    await waitFor(() =>
-      expect(patchProvider).toHaveBeenCalledWith('devin', { enabled: false }),
-    );
-    await waitFor(() =>
-      expect(toggle.getAttribute('aria-checked')).toBe('false'),
-    );
+    const order = await screen.findByRole('list', { name: 'Model preference' });
+    const rows = within(order).getAllByRole('listitem');
+    expect(
+      rows.map((r) => within(r).getByText(/^(devin|claude|codex)/).textContent),
+    ).toEqual(['devin', 'claude', 'codex']);
+    expect(
+      within(rows[0]).getByText(/Skipped: no "devin" on PATH/),
+    ).toBeTruthy();
+    expect(within(rows[1]).getByText('Will be used')).toBeTruthy();
   });
 
-  it('saves a new default as it is chosen', async () => {
-    patchSettings.mockResolvedValue({ defaultModel: 'claude:sonnet' });
+  it('moves an entry and saves the new order', async () => {
+    patchSettings.mockResolvedValue({
+      ...initial,
+      modelPreferences: ['claude', 'devin', 'codex'],
+    });
     render(<ProvidersSettings />);
-    const select = await screen.findByLabelText('Default model');
-    fireEvent.change(select, { target: { value: 'claude:sonnet' } });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Move claude up' }),
+    );
     await waitFor(() =>
       expect(patchSettings).toHaveBeenCalledWith({
-        defaultModel: 'claude:sonnet',
+        modelPreferences: ['claude', 'devin', 'codex'],
       }),
-    );
-    await waitFor(() =>
-      expect((select as HTMLSelectElement).value).toBe('claude:sonnet'),
     );
   });
 
-  it("shows the backend's reason when a change is refused, and keeps the old state", async () => {
-    patchProvider.mockRejectedValue(
-      new ApiError(
-        400,
-        '/providers/claude',
-        'Claude Code provides the default model; choose another default first',
-      ),
+  it('removes an entry, but never the last one', async () => {
+    patchSettings.mockResolvedValue({
+      ...initial,
+      modelPreferences: ['claude', 'codex'],
+    });
+    render(<ProvidersSettings />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Remove devin' }),
     );
+    await waitFor(() =>
+      expect(patchSettings).toHaveBeenCalledWith({
+        modelPreferences: ['claude', 'codex'],
+      }),
+    );
+  });
+
+  it('offers only models not yet in the order, and appends the chosen one', async () => {
+    patchSettings.mockResolvedValue({
+      ...initial,
+      modelPreferences: [...initial.modelPreferences, 'codex:o3'],
+    });
+    render(<ProvidersSettings />);
+    const add = (await screen.findByLabelText(
+      'Add to the order',
+    )) as HTMLSelectElement;
+    const options = Array.from(add.options)
+      .map((o) => o.value)
+      .filter(Boolean);
+    expect(options).toEqual(['claude:sonnet', 'codex:o3', 'devin:opus']);
+    fireEvent.change(add, { target: { value: 'codex:o3' } });
+    await waitFor(() =>
+      expect(patchSettings).toHaveBeenCalledWith({
+        modelPreferences: ['devin', 'claude', 'codex', 'codex:o3'],
+      }),
+    );
+  });
+
+  it('toggles a provider and refreshes which preference is effective', async () => {
+    patchProvider.mockResolvedValue({ ...claude, enabled: false });
+    settings.mockResolvedValueOnce(initial).mockResolvedValueOnce({
+      ...initial,
+      effectiveModel: 'codex',
+      skipped: [...initial.skipped, { model: 'claude', reason: 'disabled' }],
+    });
     render(<ProvidersSettings />);
     const toggle = await screen.findByRole('switch', {
       name: 'Claude Code enabled',
     });
     fireEvent.click(toggle);
+    await waitFor(() =>
+      expect(patchProvider).toHaveBeenCalledWith('claude', { enabled: false }),
+    );
+    await waitFor(() =>
+      expect(toggle.getAttribute('aria-checked')).toBe('false'),
+    );
+    const order = screen.getByRole('list', { name: 'Model preference' });
+    const rows = within(order).getAllByRole('listitem');
+    expect(within(rows[2]).getByText('Will be used')).toBeTruthy();
+    expect(within(rows[1]).getByText(/Skipped: disabled/)).toBeTruthy();
+  });
+
+  it("shows the backend's reason when a change is refused, and keeps the old state", async () => {
+    patchSettings.mockRejectedValue(
+      new ApiError(400, '/settings', 'unknown provider "jev"'),
+    );
+    render(<ProvidersSettings />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Move claude up' }),
+    );
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toMatch(/provides the default model/);
-    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    expect(alert.textContent).toMatch(/unknown provider/);
+    const order = screen.getByRole('list', { name: 'Model preference' });
+    expect(within(order).getAllByRole('listitem')[0].textContent).toMatch(
+      /devin/,
+    );
   });
 });

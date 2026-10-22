@@ -53,24 +53,89 @@ export class ProvidersService {
   }
 
   /**
-   * The model to fall back on. Unset in settings means the first provider in
-   * the registry, which is what the hardcoded default always was.
+   * The ordered preferences for a run that names no model: what is stored,
+   * padded with every provider not yet listed in registry order, so a
+   * freshly added provider is reachable without anyone editing the list.
    */
-  async defaultModel(): Promise<string> {
-    return (await this.settings.getDefaultModel()) ?? PROVIDERS[0].id;
+  async modelPreferences(): Promise<string[]> {
+    const stored = (await this.settings.getModelPreferences()) ?? [];
+    const listed = new Set(stored.map((model) => parseModel(model).providerId));
+    const rest = PROVIDERS.filter((p) => !listed.has(p.id)).map((p) => p.id);
+    return [...stored, ...rest];
   }
 
   /**
-   * The model a run will actually use, or why it cannot: the request's choice,
-   * else the session's last, else the default. Checked here, before a run row
-   * exists, so a disabled or missing CLI is a 400 at submit rather than a run
-   * that dies on spawn.
+   * The first preference whose provider is enabled and installed, or null
+   * when none is - with, for each one passed over, why.
+   */
+  async effectiveModel(): Promise<{
+    model: string | null;
+    skipped: { model: string; reason: string }[];
+  }> {
+    const skipped: { model: string; reason: string }[] = [];
+    for (const model of await this.modelPreferences()) {
+      const { providerId } = parseModel(model);
+      const definition = findProvider(providerId);
+      if (!definition) {
+        skipped.push({ model, reason: 'unknown provider' });
+        continue;
+      }
+      if (!(await this.settings.isProviderEnabled(providerId))) {
+        skipped.push({ model, reason: 'disabled' });
+        continue;
+      }
+      if (which(definition.binary) === null) {
+        skipped.push({ model, reason: `no "${definition.binary}" on PATH` });
+        continue;
+      }
+      return { model, skipped };
+    }
+    return { model: null, skipped };
+  }
+
+  /**
+   * The model a run will actually use, or why it cannot. The request's choice
+   * and the session's last are taken as named and checked strictly - a silent
+   * switch of provider mid-session would surprise - while a run naming none
+   * walks the preferences. Checked here, before a run row exists, so the
+   * answer is a 400 at submit rather than a run that dies on spawn.
    */
   async resolveModel(
     requested: string | null | undefined,
     inherited: string | null | undefined,
   ): Promise<{ model: string; providerId: string; cliModel?: string }> {
-    const model = requested ?? inherited ?? (await this.defaultModel());
+    const named = requested ?? inherited;
+    if (named === null || named === undefined) {
+      const { model, skipped } = await this.effectiveModel();
+      if (model === null) {
+        const why = skipped.map((s) => `${s.model} (${s.reason})`).join(', ');
+        throw new ProviderError(
+          `no preferred model is usable: ${why}; enable or install one in settings`,
+        );
+      }
+      return this.checkNamed(model);
+    }
+    return this.checkNamed(named);
+  }
+
+  private async checkNamed(
+    model: string,
+  ): Promise<{ model: string; providerId: string; cliModel?: string }> {
+    const { providerId, cliModel } = parseModel(model);
+    const definition = this.definitionFor(model);
+    if (!(await this.settings.isProviderEnabled(providerId))) {
+      throw new ProviderError(`${definition.label} is disabled in settings`);
+    }
+    if (which(definition.binary) === null) {
+      throw new ProviderError(
+        `${definition.label} is not installed: no "${definition.binary}" on PATH`,
+      );
+    }
+    return { model, providerId, cliModel };
+  }
+
+  /** The registry entry a model names, or the ProviderError saying why there is none. */
+  private definitionFor(model: string) {
     const { providerId, cliModel } = parseModel(model);
     const definition = findProvider(providerId);
     if (!definition) {
@@ -83,55 +148,23 @@ export class ProvidersService {
         `${providerId} does not take a model suffix; use "${providerId}"`,
       );
     }
-    if (!(await this.settings.isProviderEnabled(providerId))) {
-      throw new ProviderError(`${definition.label} is disabled in settings`);
-    }
-    if (which(definition.binary) === null) {
-      throw new ProviderError(
-        `${definition.label} is not installed: no "${definition.binary}" on PATH`,
-      );
-    }
-    return { model, providerId, cliModel };
+    return definition;
   }
 
   /**
-   * The default has to name a provider that exists and is enabled; it does not
-   * have to be installed yet, so a machine can be configured before its CLIs.
+   * Every entry must name a known provider (and a suffix only where it pins);
+   * it need not be enabled or installed, since that is what the order is for.
+   * Duplicates collapse to their first position.
    */
-  async setDefaultModel(model: string): Promise<void> {
-    const { providerId, cliModel } = parseModel(model);
-    const definition = findProvider(providerId);
-    if (!definition) {
-      throw new ProviderError(
-        `unknown provider "${providerId}"; known: ${PROVIDERS.map((p) => p.id).join(', ')}`,
-      );
-    }
-    if (cliModel !== undefined && !definition.pinnable) {
-      throw new ProviderError(
-        `${providerId} does not take a model suffix; use "${providerId}"`,
-      );
-    }
-    if (!(await this.settings.isProviderEnabled(providerId))) {
-      throw new ProviderError(
-        `${definition.label} is disabled; enable it before making it the default`,
-      );
-    }
-    await this.settings.setDefaultModel(model);
+  async setModelPreferences(models: string[]): Promise<void> {
+    const unique = [...new Set(models)];
+    for (const model of unique) this.definitionFor(model);
+    await this.settings.setModelPreferences(unique);
   }
 
-  /** Switching off the default model's provider would strand every unqualified run. */
   async setEnabled(id: string, enabled: boolean): Promise<ProviderStatus> {
-    const definition = findProvider(id);
-    if (!definition) {
+    if (!findProvider(id)) {
       throw new ProviderError(`unknown provider "${id}"`);
-    }
-    if (!enabled) {
-      const { providerId } = parseModel(await this.defaultModel());
-      if (providerId === id) {
-        throw new ProviderError(
-          `${definition.label} provides the default model; choose another default first`,
-        );
-      }
     }
     await this.settings.setProviderEnabled(id, enabled);
     return (await this.get(id))!;

@@ -63,7 +63,7 @@ export default function RunPromptDialog({
       .then(([providers, settings]) => {
         if (cancelled) return;
         setSuggestions(modelChoices(providers));
-        setSettingsDefault(settings.defaultModel);
+        setSettingsDefault(settings.effectiveModel);
       })
       .catch(() => {
         // The field still takes free text; the backend validates either way.

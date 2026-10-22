@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString, Matches } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsString,
+  Matches,
+} from 'class-validator';
 
 export class ProviderDto {
   @ApiProperty({ example: 'claude' }) id!: string;
@@ -27,20 +33,45 @@ export class UpdateProviderDto {
   @ApiProperty() @IsBoolean() enabled!: boolean;
 }
 
+export class SkippedModelDto {
+  @ApiProperty({ example: 'claude' }) model!: string;
+  @ApiProperty({ example: 'disabled' }) reason!: string;
+}
+
 export class SettingsDto {
   @ApiProperty({
+    type: [String],
+    example: ['claude:sonnet', 'codex', 'devin'],
+    description:
+      'Models for runs that name none, in order of preference. The first whose ' +
+      'provider is enabled and installed is used. Each is "<provider>" or ' +
+      '"<provider>:<model>".',
+  })
+  modelPreferences!: string[];
+
+  @ApiProperty({
+    nullable: true,
     example: 'claude:sonnet',
     description:
-      'Model for runs that name none: "<provider>" or "<provider>:<model>"',
+      'The preference a run would get right now; null when none is usable.',
   })
-  defaultModel!: string;
+  effectiveModel!: string | null;
+
+  @ApiProperty({
+    type: [SkippedModelDto],
+    description: 'Preferences passed over, and why.',
+  })
+  skipped!: SkippedModelDto[];
 }
 
 export class UpdateSettingsDto {
-  @ApiProperty({ example: 'claude:sonnet' })
-  @IsString()
+  @ApiProperty({ type: [String], example: ['claude:sonnet', 'codex'] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
   @Matches(/^[a-z][a-z0-9-]*(:[A-Za-z0-9][A-Za-z0-9._-]*)?$/, {
-    message: 'defaultModel must be "<provider>" or "<provider>:<model>"',
+    each: true,
+    message: 'each preference must be "<provider>" or "<provider>:<model>"',
   })
-  defaultModel!: string;
+  modelPreferences!: string[];
 }

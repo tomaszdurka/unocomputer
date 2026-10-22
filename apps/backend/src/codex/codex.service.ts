@@ -14,7 +14,7 @@ export class CodexService {
   private readonly logger = new Logger(CodexService.name);
 
   async run(options: RunOptions): Promise<RunResult> {
-    const { run, session, workspace } = options;
+    const { run, session, workspace, cliModel } = options;
     const { runId, prompt, outputSchema } = run;
 
     // Ensure run directory exist
@@ -32,6 +32,8 @@ export class CodexService {
     const enhancedPrompt = `${sessionMarker}${prompt}`;
 
     const args = ['exec'];
+    // Pin the model when the run asked for one (e.g. \"codex:o3\").
+    if (cliModel) args.push('--model', cliModel);
     if (codexSessionId) {
       args.push('resume', codexSessionId);
     }

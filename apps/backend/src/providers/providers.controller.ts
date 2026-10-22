@@ -42,13 +42,12 @@ export class ProvidersController {
   @ApiOperation({
     summary: 'Enable or disable a provider',
     description:
-      'A disabled provider is refused at run creation. The provider of the default ' +
-      'model cannot be disabled; change the default first.',
+      'A disabled provider is refused when a run names it, and skipped by the ' +
+      'model preferences for a run that names none.',
   })
   @ApiParam({ name: 'id', example: 'devin' })
   @ApiResponse({ status: 200, type: ProviderDto })
   @ApiResponse({ status: 404, description: 'No such provider' })
-  @ApiResponse({ status: 400, description: 'It provides the default model' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateProviderDto,
@@ -71,29 +70,47 @@ export class ProvidersController {
 export class SettingsController {
   constructor(private readonly providers: ProvidersService) {}
 
+  private async current(): Promise<SettingsDto> {
+    const [modelPreferences, { model, skipped }] = await Promise.all([
+      this.providers.modelPreferences(),
+      this.providers.effectiveModel(),
+    ]);
+    return { modelPreferences, effectiveModel: model, skipped };
+  }
+
   @Get()
-  @ApiOperation({ summary: 'Application settings' })
+  @ApiOperation({
+    summary: 'Application settings',
+    description:
+      'The model preferences for runs that name none, and which of them a run ' +
+      'would get right now.',
+  })
   @ApiResponse({ status: 200, type: SettingsDto })
-  async get(): Promise<SettingsDto> {
-    return { defaultModel: await this.providers.defaultModel() };
+  get(): Promise<SettingsDto> {
+    return this.current();
   }
 
   @Patch()
   @ApiOperation({
     summary: 'Update settings',
     description:
-      'defaultModel must name a known, enabled provider; it need not be installed yet.',
+      'Replaces the model preferences. Each must name a known provider; none has ' +
+      'to be enabled or installed, since the order exists to skip the ones that are not.',
   })
   @ApiResponse({ status: 200, type: SettingsDto })
-  @ApiResponse({ status: 400, description: 'Unknown or disabled provider' })
+  @ApiResponse({
+    status: 400,
+    description: 'A preference names an unknown provider',
+  })
   async update(@Body() body: UpdateSettingsDto): Promise<SettingsDto> {
     try {
-      await this.providers.setDefaultModel(body.defaultModel);
+      await this.providers.setModelPreferences(body.modelPreferences);
     } catch (error) {
-      if (error instanceof ProviderError)
+      if (error instanceof ProviderError) {
         throw new BadRequestException(error.message);
+      }
       throw error;
     }
-    return { defaultModel: await this.providers.defaultModel() };
+    return this.current();
   }
 }

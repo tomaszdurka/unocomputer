@@ -223,32 +223,45 @@ it accepts.
 
 #### `PATCH /providers/:id`
 
-Body `{ "enabled": boolean }`. A disabled provider is refused at run creation
-with a 400 that says so. The provider of the default model cannot be disabled
-(400); change the default first. Unknown id: 404.
+Body `{ "enabled": boolean }`. A disabled provider is refused when a run names
+it (400 with the reason) and skipped by the model preferences for a run that
+names none, so any provider can be switched off at any time. Unknown id: 404.
 
 #### `GET /settings`
 
 ```json
-{ "defaultModel": "claude" }
+{
+  "modelPreferences": ["claude:sonnet", "codex", "devin", "gemini"],
+  "effectiveModel": "claude:sonnet",
+  "skipped": []
+}
 ```
 
-The model a run gets when it names none and its session has no previous run.
-Unset means the first provider in the registry, `claude`.
+`modelPreferences` is the order a run that names no model tries, each entry
+`"<provider>"` or `"<provider>:<model>"`. `effectiveModel` is the first whose
+provider is enabled and installed - what such a run would get right now - and
+`skipped` lists the ones passed over with why (`disabled`, `no "gemini" on
+PATH`). Unset means registry order; a `defaultModel` stored before the list
+existed reads as its head. Providers not in the stored list are appended in
+registry order, so a newly added provider is reachable without editing it.
 
 #### `PATCH /settings`
 
-Body `{ "defaultModel": "<provider>" | "<provider>:<model>" }`. The provider
-must exist and be enabled; it need not be installed yet, so a machine can be
-configured before its CLIs are. Otherwise 400 with the reason.
+Body `{ "modelPreferences": [ ... ] }`, at least one entry. Each must name a
+known provider (and a `:model` suffix only where the provider pins one); none
+has to be enabled or installed, since the order exists to skip those. Duplicates
+collapse to their first position. Otherwise 400 with the reason.
 
 #### How a run's model is settled
 
 At creation, before any row exists: the request's `model`, else the session's
-last run's model, else `defaultModel`. The result is stored on the run, so
-`run.model` is always set for runs made since. A model naming an unknown,
-disabled or uninstalled provider is a 400 at submit - not a run that dies on
-spawn.
+last run's model, else the first usable preference. The result is stored on the
+run, so `run.model` is always set for runs made since.
+
+A model given by name - the request's or the session's - is checked strictly: a
+disabled or uninstalled provider is a 400 at submit, never a silent switch to
+another provider mid-session. A run naming none walks the preferences, and gets
+a 400 only when nothing in the order is usable, listing each entry and why.
 
 ### Legacy Endpoint: `POST /runs/claude`
 
@@ -589,8 +602,10 @@ Homebrew as `brew install --cask devin-cli`.
 **Purpose:** The one place that knows which providers exist (`registry.ts`),
 whether each is installed (`which()` over the backend's PATH) and enabled
 (`SettingsService`), and what model a run gets. `resolveModel(requested,
-inherited)` is called by `RunsController` at creation; it throws a
-`ProviderError` with a message written for the caller, which becomes the 400.
+inherited)` is called by `RunsController` at creation: a named model is checked
+strictly, an absent one walks `modelPreferences` to the first usable entry. It
+throws a `ProviderError` with a message written for the caller, which becomes
+the 400.
 
 #### RunsController
 

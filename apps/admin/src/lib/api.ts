@@ -267,9 +267,9 @@ export async function getSettings(): Promise<AppSettings> {
   return request<AppSettings>('/settings');
 }
 
-export async function updateSettings(
-  data: Partial<AppSettings>,
-): Promise<AppSettings> {
+export async function updateSettings(data: {
+  modelPreferences: string[];
+}): Promise<AppSettings> {
   return request<AppSettings>('/settings', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

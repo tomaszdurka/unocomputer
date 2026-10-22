@@ -28,10 +28,11 @@ describe('Providers and settings (HTTP)', () => {
       );
 
     const settings: Partial<SettingsService> = {
-      getDefaultModel: async () =>
-        (store.defaultModel as string | null) ?? null,
-      setDefaultModel: async (model) => {
-        store.defaultModel = model;
+      getModelPreferences: async () =>
+        (store.modelPreferences as string[] | null) ??
+        (store.defaultModel ? [store.defaultModel as string] : null),
+      setModelPreferences: async (models: string[]) => {
+        store.modelPreferences = models;
       },
       isProviderEnabled: async (id) =>
         (store[`providers.${id}.enabled`] as boolean | undefined) ?? true,
@@ -105,13 +106,6 @@ describe('Providers and settings (HTTP)', () => {
       await patch('/api/providers/jev', { enabled: false }).expect(404);
     });
 
-    it('refuses to disable the provider of the default model', async () => {
-      const res = await patch('/api/providers/claude', {
-        enabled: false,
-      }).expect(400);
-      expect(JSON.stringify(res.body)).toContain('default');
-    });
-
     it('rejects a body that is not { enabled: boolean }', async () => {
       await patch('/api/providers/devin', { enabled: 'no' }).expect(400);
       await patch('/api/providers/devin', {
@@ -122,48 +116,96 @@ describe('Providers and settings (HTTP)', () => {
   });
 
   describe('GET/PATCH /api/settings', () => {
-    it('defaults to the first provider until something is set', async () => {
+    it('starts with every provider in registry order, and says which one a run would get', async () => {
       const res = await get('/api/settings').expect(200);
-      expect(res.body).toEqual({ defaultModel: 'claude' });
+      expect(res.body.modelPreferences).toEqual([
+        'claude',
+        'codex',
+        'gemini',
+        'devin',
+      ]);
+      expect(res.body.effectiveModel).toBe('claude');
+      expect(res.body.skipped).toEqual([]);
     });
 
-    it('stores a default with a pinned model', async () => {
+    it('stores an order and pads it with the providers not listed', async () => {
       const res = await patch('/api/settings', {
-        defaultModel: 'claude:sonnet',
+        modelPreferences: ['devin', 'codex:o3'],
       }).expect(200);
-      expect(res.body).toEqual({ defaultModel: 'claude:sonnet' });
-      expect((await get('/api/settings')).body.defaultModel).toBe(
-        'claude:sonnet',
-      );
+      expect(res.body.modelPreferences).toEqual([
+        'devin',
+        'codex:o3',
+        'claude',
+        'gemini',
+      ]);
+      expect((await get('/api/settings')).body.modelPreferences).toEqual([
+        'devin',
+        'codex:o3',
+        'claude',
+        'gemini',
+      ]);
     });
 
-    it('accepts a provider that is enabled but not installed', async () => {
-      await patch('/api/settings', { defaultModel: 'devin' }).expect(200);
+    it('skips a preference whose provider is not installed, and says so', async () => {
+      const res = await patch('/api/settings', {
+        modelPreferences: ['devin', 'claude'],
+      }).expect(200);
+      expect(res.body.effectiveModel).toBe('claude');
+      expect(res.body.skipped).toEqual([
+        { model: 'devin', reason: 'no "devin" on PATH' },
+      ]);
+    });
+
+    it('skips a preference whose provider is disabled - which is why disabling is always allowed', async () => {
+      await patch('/api/providers/claude', { enabled: false }).expect(200);
+      const res = await get('/api/settings').expect(200);
+      expect(res.body.effectiveModel).toBe('codex');
+      expect(res.body.skipped).toEqual([
+        { model: 'claude', reason: 'disabled' },
+      ]);
+    });
+
+    it('reports null when nothing is usable', async () => {
+      await patch('/api/providers/claude', { enabled: false }).expect(200);
+      await patch('/api/providers/codex', { enabled: false }).expect(200);
+      const res = await get('/api/settings').expect(200);
+      expect(res.body.effectiveModel).toBeNull();
+      expect(res.body.skipped).toHaveLength(4);
+    });
+
+    it('reads a defaultModel stored before preferences existed as the head of the list', async () => {
+      store.defaultModel = 'codex';
+      const res = await get('/api/settings').expect(200);
+      expect(res.body.modelPreferences[0]).toBe('codex');
+    });
+
+    it('collapses duplicates to their first position', async () => {
+      const res = await patch('/api/settings', {
+        modelPreferences: ['codex', 'claude', 'codex'],
+      }).expect(200);
+      expect(res.body.modelPreferences).toEqual([
+        'codex',
+        'claude',
+        'gemini',
+        'devin',
+      ]);
     });
 
     it('rejects an unknown provider, naming the known ones', async () => {
-      const res = await patch('/api/settings', { defaultModel: 'jev' }).expect(
-        400,
-      );
+      const res = await patch('/api/settings', {
+        modelPreferences: ['jev'],
+      }).expect(400);
       expect(JSON.stringify(res.body)).toContain(
         'claude, codex, gemini, devin',
       );
     });
 
-    it('rejects a model suffix on a provider that cannot pin one', async () => {
-      await patch('/api/settings', { defaultModel: 'codex:o3' }).expect(400);
-    });
-
-    it('rejects a disabled provider as the default', async () => {
-      await patch('/api/providers/devin', { enabled: false }).expect(200);
-      const res = await patch('/api/settings', {
-        defaultModel: 'devin',
+    it('rejects an empty list and a malformed entry before the registry sees them', async () => {
+      await patch('/api/settings', { modelPreferences: [] }).expect(400);
+      await patch('/api/settings', {
+        modelPreferences: ['Claude Code'],
       }).expect(400);
-      expect(JSON.stringify(res.body)).toContain('disabled');
-    });
-
-    it('rejects a malformed defaultModel before it reaches the registry', async () => {
-      await patch('/api/settings', { defaultModel: 'Claude Code' }).expect(400);
+      await patch('/api/settings', { modelPreferences: 'claude' }).expect(400);
     });
   });
 

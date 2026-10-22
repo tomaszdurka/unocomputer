@@ -14,7 +14,7 @@ export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
 
   async run(options: RunOptions): Promise<RunResult> {
-    const { run, session, workspace } = options;
+    const { run, session, workspace, cliModel } = options;
     const { runId, prompt, outputSchema } = run;
 
     // Ensure run directory exist
@@ -36,6 +36,8 @@ export class GeminiService {
     }
 
     const args = [];
+    // Pin the model when the run asked for one (e.g. \"gemini:gemini-2.5-pro\").
+    if (cliModel) args.push('--model', cliModel);
 
     if (geminiSessionId) {
       args.push('--resume', geminiSessionId);
