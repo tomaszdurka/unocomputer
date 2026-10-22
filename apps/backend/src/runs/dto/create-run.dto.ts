@@ -52,16 +52,17 @@ export class CreateRunDto {
 
   @ApiProperty({
     description:
-      'Optional model to use: the CLI (claude, gemini, codex), optionally pinning ' +
-      'the CLI model as "<cli>:<model>" (claude only), e.g. "claude:sonnet" or ' +
-      '"claude:sonnet-4-5". Without the suffix the CLI default applies.',
+      'Optional model: a provider id (see GET /providers), optionally pinning the ' +
+      'CLI model as "<provider>:<model>" where the provider supports it, e.g. ' +
+      '"claude:sonnet" or "devin:opus". Omitted, the session\'s last model applies, ' +
+      'else the default from settings. A disabled or uninstalled provider is a 400.',
     required: false,
     example: 'claude:sonnet',
   })
   @IsString()
   @IsOptional()
-  @Matches(/^(claude(:[a-zA-Z0-9][a-zA-Z0-9._-]*)?|gemini|codex)$/, {
-    message: 'model must be claude[:<model>], gemini, or codex',
+  @Matches(/^[a-z][a-z0-9-]*(:[A-Za-z0-9][A-Za-z0-9._-]*)?$/, {
+    message: 'model must be "<provider>" or "<provider>:<model>"',
   })
   model?: string;
 

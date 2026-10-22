@@ -6,6 +6,8 @@ import { RunOptions, RunResult } from './dto/run-options';
 import { ClaudeService } from '../claude/claude.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { CodexService } from '../codex/codex.service';
+import { DevinService } from '../devin/devin.service';
+import { ProvidersService } from '../providers/providers.service';
 
 @Injectable()
 export class RunsService {
@@ -14,6 +16,8 @@ export class RunsService {
     private readonly claudeService: ClaudeService,
     private readonly geminiService: GeminiService,
     private readonly codexService: CodexService,
+    private readonly devinService: DevinService,
+    private readonly providers: ProvidersService,
   ) {}
   private readonly logger = new Logger(RunsService.name);
 
@@ -32,6 +36,9 @@ export class RunsService {
     }
     if (provider === 'codex') {
       return this.codexService.run(options);
+    }
+    if (provider === 'devin') {
+      return this.devinService.run({ ...options, cliModel });
     }
     throw new Error('Invalid provider');
   }
@@ -57,8 +64,10 @@ export class RunsService {
       }
     }
 
+    // Runs created since the providers settings exist carry their resolved
+    // model; this is for rows that predate it.
     if (!model) {
-      model = 'claude';
+      model = await this.providers.defaultModel();
     }
 
     let sequence = 0;

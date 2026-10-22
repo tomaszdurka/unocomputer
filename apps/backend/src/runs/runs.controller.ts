@@ -24,6 +24,10 @@ import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'node:fs';
 import { defaultWorkspaceDir } from '../workspaces/workspace-directory';
 import { RunsService } from './runs.service';
+import {
+  ProviderError,
+  ProvidersService,
+} from '../providers/providers.service';
 
 @ApiTags('runs')
 @Controller('runs')
@@ -31,11 +35,14 @@ export class RunsController {
   constructor(
     private readonly persistence: PersistenceService,
     private readonly runs: RunsService,
+    private readonly providers: ProvidersService,
   ) {}
 
   private async prepareRun(dto: CreateRunDto) {
     let workspace;
     let session;
+    // The session's last model, for a run that names none.
+    let inherited: string | null = null;
 
     if (dto.sessionId) {
       // Continue existing session
@@ -44,6 +51,8 @@ export class RunsController {
         throw new NotFoundException(`Session ${dto.sessionId} not found`);
       }
       workspace = session.workspace;
+      const previous = session.runs ?? [];
+      inherited = previous.length ? previous[previous.length - 1].model : null;
 
       // If workspaceId also provided, validate it matches
       if (dto.workspaceId && workspace.workspaceId !== dto.workspaceId) {
@@ -76,13 +85,26 @@ export class RunsController {
       });
     }
 
+    // The model is settled here, before any row exists: the request's, else the
+    // session's last, else the default - and a disabled or uninstalled provider
+    // is a 400 now rather than a run that dies on spawn.
+    let model: string;
+    try {
+      ({ model } = await this.providers.resolveModel(dto.model, inherited));
+    } catch (error) {
+      if (error instanceof ProviderError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
+
     // Create run
     const run = await this.persistence.createRun({
       prompt: dto.prompt,
       sessionId: session.sessionId,
       workspaceId: workspace.workspaceId,
       outputSchema: dto.schema,
-      model: dto.model,
+      model,
       tags: dto.tags,
     });
 

@@ -4,10 +4,19 @@ import { RunsService } from './runs.service';
 import { ClaudeModule } from '../claude/claude.module';
 import { GeminiModule } from '../gemini/gemini.module';
 import { CodexModule } from '../codex/codex.module';
+import { DevinModule } from '../devin/devin.module';
+import { ProvidersModule } from '../providers/providers.module';
 import { PersistenceModule } from '../database/persistence.module';
 
 @Module({
-  imports: [ClaudeModule, GeminiModule, CodexModule, PersistenceModule],
+  imports: [
+    ClaudeModule,
+    GeminiModule,
+    CodexModule,
+    DevinModule,
+    ProvidersModule,
+    PersistenceModule,
+  ],
   controllers: [RunsController],
   providers: [RunsService],
   exports: [RunsService],

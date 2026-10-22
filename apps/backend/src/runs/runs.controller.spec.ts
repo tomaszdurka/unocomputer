@@ -3,6 +3,7 @@ import request from 'supertest';
 import { RunsController } from './runs.controller';
 import { RunsService } from './runs.service';
 import { PersistenceService } from '../database/persistence.service';
+import { ProvidersService } from '../providers/providers.service';
 import { createHttpTestApp, emptyPage } from '../test/http-harness';
 import { RunStatus } from '../database/run-status';
 
@@ -27,6 +28,14 @@ describe('RunsController (HTTP)', () => {
           useValue: { findAllRuns, findRunWithEvents },
         },
         { provide: RunsService, useValue: { run: jest.fn() } },
+        {
+          provide: ProvidersService,
+          useValue: {
+            resolveModel: jest
+              .fn()
+              .mockResolvedValue({ model: 'claude', providerId: 'claude' }),
+          },
+        },
       ],
     });
   });

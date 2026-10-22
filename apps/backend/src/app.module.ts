@@ -4,6 +4,7 @@ import { RunsModule } from './runs/runs.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PromptsModule } from './prompts/prompts.module';
+import { ProvidersModule } from './providers/providers.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PersistenceModule } from './database/persistence.module';
 import { LifecycleService } from './lifecycle.service';
@@ -20,6 +21,7 @@ import { LifecycleService } from './lifecycle.service';
     WorkspacesModule,
     SessionsModule,
     PromptsModule,
+    ProvidersModule,
   ],
   providers: [LifecycleService],
 })

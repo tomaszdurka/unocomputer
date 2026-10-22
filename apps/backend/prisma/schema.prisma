@@ -97,3 +97,15 @@ model Prompt {
 
   @@map("prompt")
 }
+
+// Application settings as a key/value store, JSON-encoded. One table for every
+// setting there will ever be, rather than a migration per setting: today the
+// default model and which providers are enabled; typed access lives in
+// SettingsService, which is the only reader and writer.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("setting")
+}

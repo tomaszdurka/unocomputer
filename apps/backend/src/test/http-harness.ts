@@ -1,6 +1,5 @@
-import type { INestApplication } from '@nestjs/common';
+import type { INestApplication, Provider, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { Type } from '@nestjs/common';
 import { createValidationPipe } from '../validation';
 
 /**
@@ -12,7 +11,7 @@ import { createValidationPipe } from '../validation';
  */
 export async function createHttpTestApp(options: {
   controllers: Type<unknown>[];
-  providers: { provide: Type<unknown>; useValue: unknown }[];
+  providers: Provider[];
 }): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
     controllers: options.controllers,
