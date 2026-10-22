@@ -136,6 +136,33 @@ describe('ProvidersSettings', () => {
     expect(name('codex').className).not.toMatch(/line-through|font-semibold/);
   });
 
+  it('warns when nothing in the order can be used', async () => {
+    list.mockResolvedValue([
+      { ...claude, enabled: false },
+      { ...codex, enabled: false },
+      devin,
+    ]);
+    settings.mockResolvedValue({
+      modelPreferences: ['claude', 'codex', 'devin'],
+      effectiveModel: null,
+      unusable: [
+        { model: 'claude', reason: 'disabled' },
+        { model: 'codex', reason: 'disabled' },
+        { model: 'devin', reason: 'no "devin" on PATH' },
+      ],
+    });
+    render(<ProvidersSettings />);
+    expect(await screen.findByText('No model can be used')).toBeTruthy();
+    const order = screen.getByRole('list', { name: 'Model preference' });
+    expect(within(order).queryByText('Will be used')).toBeNull();
+  });
+
+  it('shows no warning while something can be used', async () => {
+    render(<ProvidersSettings />);
+    await screen.findByText('Claude Code');
+    expect(screen.queryByText('No model can be used')).toBeNull();
+  });
+
   it('moves an entry and saves the new order', async () => {
     patchSettings.mockResolvedValue({
       ...initial,

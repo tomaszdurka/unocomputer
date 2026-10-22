@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Button, DataTable, type Column } from '@app/ui';
+import { Alert, Badge, Button, DataTable, type Column } from '@app/ui';
 import {
   ApiError,
   listProviders,
@@ -193,6 +193,14 @@ export default function ProvidersSettings() {
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
+      ) : null}
+
+      {settings.effectiveModel === null ? (
+        <Alert variant="warning" title="No model can be used">
+          Every provider is disabled or not installed, so a run that names no
+          model will be refused. Enable one below, or install its CLI where the
+          backend can see it.
+        </Alert>
       ) : null}
 
       <section className="space-y-3">

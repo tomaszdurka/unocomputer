@@ -6,7 +6,8 @@ import { getSettings, listProviders } from '#/lib/api';
 import { Dialog, DialogContent } from '@app/ui/dialog';
 import { X, ArrowDownNarrowWide } from 'lucide-react';
 import PromptSelector from '#/components/prompts/PromptSelector';
-import { Badge, Button } from '@app/ui';
+import Link from 'next/link';
+import { Alert, Badge, Button } from '@app/ui';
 
 type RunPromptDialogProps = {
   open: boolean;
@@ -54,6 +55,8 @@ export default function RunPromptDialog({
   // as none, and the backend applies the same default itself.
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [settingsDefault, setSettingsDefault] = useState<string | null>(null);
+  // True once settings say no preference is usable: every provider off or missing.
+  const [noUsableModel, setNoUsableModel] = useState(false);
   const [runModel, setRunModel] = useState(lastUsedModel ?? '');
 
   useEffect(() => {
@@ -64,6 +67,7 @@ export default function RunPromptDialog({
         if (cancelled) return;
         setSuggestions(modelChoices(providers));
         setSettingsDefault(settings.effectiveModel);
+        setNoUsableModel(settings.effectiveModel === null);
       })
       .catch(() => {
         // The field still takes free text; the backend validates either way.
@@ -179,6 +183,16 @@ export default function RunPromptDialog({
                     : 'the default'}
                 .
               </p>
+              {noUsableModel ? (
+                <Alert variant="warning" className="mt-2">
+                  No provider can take this run: every one is disabled or not
+                  installed. Fix that in{' '}
+                  <Link href="/settings/providers" className="underline">
+                    Settings &rarr; Providers
+                  </Link>
+                  .
+                </Alert>
+              ) : null}
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
