@@ -32,5 +32,6 @@ export const navigation: SidebarItem[] = [
 
 export const settingsNavigation: SidebarItem[] = [
   { href: '/settings/general', label: 'General', icon: <SlidersIcon /> },
+  { href: '/settings/providers', label: 'Providers', icon: <PlayIcon /> },
   { href: '/settings/appearance', label: 'Appearance', icon: <MonitorIcon /> },
 ];

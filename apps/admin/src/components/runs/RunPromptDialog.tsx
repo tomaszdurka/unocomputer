@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Prompt, Run } from '#/lib/types';
+import { useEffect, useState, useMemo } from 'react';
+import { modelChoices, type Prompt, type Run } from '#/lib/types';
+import { getSettings, listProviders } from '#/lib/api';
 import { Dialog, DialogContent } from '@app/ui/dialog';
 import { X, ArrowDownNarrowWide } from 'lucide-react';
 import PromptSelector from '#/components/prompts/PromptSelector';
@@ -19,16 +20,6 @@ type RunPromptDialogProps = {
   runs?: Run[];
   submitButtonText?: string;
 };
-
-const MODEL_SUGGESTIONS = [
-  'claude',
-  'claude:sonnet',
-  'claude:haiku',
-  'claude:opus',
-  'claude:fable',
-  'gemini',
-  'codex',
-];
 
 export default function RunPromptDialog({
   open,
@@ -57,8 +48,32 @@ export default function RunPromptDialog({
     return sortedRuns[0]?.model || null;
   }, [runs]);
 
-  const defaultModel = lastUsedModel || 'claude';
-  const [runModel, setRunModel] = useState(defaultModel);
+  // What the picker suggests and what it starts on come from the backend: the
+  // providers that are on and installed, and the default from settings. Loaded
+  // when the dialog opens so a closed one costs nothing. An empty model is sent
+  // as none, and the backend applies the same default itself.
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [settingsDefault, setSettingsDefault] = useState<string | null>(null);
+  const [runModel, setRunModel] = useState(lastUsedModel ?? '');
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    Promise.all([listProviders(), getSettings()])
+      .then(([providers, settings]) => {
+        if (cancelled) return;
+        setSuggestions(modelChoices(providers));
+        setSettingsDefault(settings.defaultModel);
+      })
+      .catch(() => {
+        // The field still takes free text; the backend validates either way.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const placeholderModel = lastUsedModel ?? settingsDefault ?? '';
 
   const handleSelectPrompt = (selectedPrompt: Prompt) => {
     setSelectedSavedPrompt(selectedPrompt);
@@ -110,7 +125,7 @@ export default function RunPromptDialog({
       const result = await onSubmit({
         prompt: finalPrompt,
         schema,
-        model: runModel,
+        model: runModel.trim() || undefined,
       });
 
       setRunSuccess(`Job queued successfully! Run ID: ${result.runId}`);
@@ -145,19 +160,24 @@ export default function RunPromptDialog({
                 list="run-model-options"
                 value={runModel}
                 onChange={(e) => setRunModel(e.target.value)}
-                placeholder="claude"
+                placeholder={placeholderModel}
                 className="w-full rounded-md border border-gray-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:ring-neutral-500"
                 disabled={isSubmitting}
               />
               <datalist id="run-model-options">
-                {MODEL_SUGGESTIONS.map((option) => (
+                {suggestions.map((option) => (
                   <option key={option} value={option} />
                 ))}
               </datalist>
               <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                The CLI to run, optionally pinning its model: claude,
-                claude:sonnet, claude:sonnet-4-5, gemini, codex.
-                {lastUsedModel ? ` Last used: ${lastUsedModel}.` : ''}
+                A provider, optionally pinning its model as provider:model.
+                Leave empty for{' '}
+                {lastUsedModel
+                  ? `the session's last (${lastUsedModel})`
+                  : settingsDefault
+                    ? `the default (${settingsDefault})`
+                    : 'the default'}
+                .
               </p>
             </div>
             <div>

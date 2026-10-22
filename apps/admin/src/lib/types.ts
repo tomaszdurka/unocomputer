@@ -87,3 +87,37 @@ export type Paginated<T> = {
 
 /** Matches the backend's default and cap; see apps/backend common/dto. */
 export const PAGE_SIZE = 100;
+
+/** A CLI UnoComputer can drive, with its live state. Mirrors GET /providers. */
+export type Provider = {
+  id: string;
+  label: string;
+  /** Looked up on the backend's PATH. */
+  binary: string;
+  /** Whether "<id>:<model>" pins the CLI's model. */
+  pinnable: boolean;
+  /** Suggested models, not a whitelist. */
+  models: string[];
+  available: boolean;
+  path: string | null;
+  enabled: boolean;
+};
+
+export type AppSettings = {
+  /** Model for runs that name none: "<provider>" or "<provider>:<model>". */
+  defaultModel: string;
+};
+
+/**
+ * What the model picker offers: each usable provider plus its pinned variants,
+ * in registry order. A provider that is off or not installed is left out, so
+ * the picker cannot offer a run the backend would refuse.
+ */
+export function modelChoices(providers: Provider[]): string[] {
+  return providers
+    .filter((p) => p.enabled && p.available)
+    .flatMap((p) => [
+      p.id,
+      ...(p.pinnable ? p.models.map((m) => `${p.id}:${m}`) : []),
+    ]);
+}

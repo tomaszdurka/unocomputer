@@ -5,7 +5,15 @@
 // Server:  talk to the socket directly. Routing a server component's fetch back through
 //          our own port just to reach the proxy would be a pointless extra hop.
 
-import type { Paginated, Prompt, Run, Session, Workspace } from './types';
+import type {
+  AppSettings,
+  Paginated,
+  Prompt,
+  Provider,
+  Run,
+  Session,
+  Workspace,
+} from './types';
 
 type RequestOptions = {
   method?: string;
@@ -237,5 +245,34 @@ export async function updatePrompt(
 export async function deletePrompt(promptId: string): Promise<void> {
   return request(`/prompts/${promptId}`, {
     method: 'DELETE',
+  });
+}
+
+export async function listProviders(): Promise<Provider[]> {
+  return request<Provider[]>('/providers');
+}
+
+export async function updateProvider(
+  id: string,
+  data: { enabled: boolean },
+): Promise<Provider> {
+  return request<Provider>(`/providers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getSettings(): Promise<AppSettings> {
+  return request<AppSettings>('/settings');
+}
+
+export async function updateSettings(
+  data: Partial<AppSettings>,
+): Promise<AppSettings> {
+  return request<AppSettings>('/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
 }
