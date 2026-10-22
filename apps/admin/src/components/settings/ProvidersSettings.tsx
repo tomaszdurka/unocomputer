@@ -232,10 +232,28 @@ export default function ProvidersSettings() {
                 key={model}
                 className="flex items-center gap-3 px-4 py-2 text-sm"
               >
-                <span className="w-5 text-right text-xs text-gray-400 dark:text-neutral-500">
+                <span
+                  className={`w-5 text-right text-xs ${
+                    reason
+                      ? 'text-gray-300 dark:text-neutral-700'
+                      : 'text-gray-400 dark:text-neutral-500'
+                  }`}
+                >
                   {index + 1}
                 </span>
-                <span className="flex-1 font-mono">{model}</span>
+                {/* The eye should get it before the badge does: what will not be
+                    used is struck through and greyed, what will be used is bold. */}
+                <span
+                  className={`flex-1 font-mono ${
+                    reason
+                      ? 'text-gray-400 line-through dark:text-neutral-600'
+                      : effective
+                        ? 'font-semibold'
+                        : ''
+                  }`}
+                >
+                  {model}
+                </span>
                 {effective ? (
                   <Badge
                     variant="outline"

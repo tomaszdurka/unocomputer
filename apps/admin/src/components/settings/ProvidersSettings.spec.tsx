@@ -119,6 +119,23 @@ describe('ProvidersSettings', () => {
     expect(within(rows[1]).getByText('Will be used')).toBeTruthy();
   });
 
+  it('strikes through and greys what will not be used, and bolds what will', async () => {
+    settings.mockResolvedValue({
+      modelPreferences: ['devin', 'claude', 'codex'],
+      effectiveModel: 'claude',
+      unusable: [{ model: 'devin', reason: 'no "devin" on PATH' }],
+    });
+    render(<ProvidersSettings />);
+    const order = await screen.findByRole('list', { name: 'Model preference' });
+    const name = (model: string) =>
+      within(order).getByText(model, { selector: 'span' });
+    expect(name('devin').className).toMatch(/line-through/);
+    expect(name('devin').className).toMatch(/text-gray-400/);
+    expect(name('claude').className).toMatch(/font-semibold/);
+    expect(name('claude').className).not.toMatch(/line-through/);
+    expect(name('codex').className).not.toMatch(/line-through|font-semibold/);
+  });
+
   it('moves an entry and saves the new order', async () => {
     patchSettings.mockResolvedValue({
       ...initial,
