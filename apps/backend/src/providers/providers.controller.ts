@@ -71,11 +71,11 @@ export class SettingsController {
   constructor(private readonly providers: ProvidersService) {}
 
   private async current(): Promise<SettingsDto> {
-    const [modelPreferences, { model, skipped }] = await Promise.all([
+    const [modelPreferences, { model, unusable }] = await Promise.all([
       this.providers.modelPreferences(),
       this.providers.effectiveModel(),
     ]);
-    return { modelPreferences, effectiveModel: model, skipped };
+    return { modelPreferences, effectiveModel: model, unusable };
   }
 
   @Get()

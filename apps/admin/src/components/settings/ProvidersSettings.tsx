@@ -100,8 +100,9 @@ export default function ProvidersSettings() {
   const addable = providers
     .flatMap(modelNames)
     .filter((model) => !prefs.includes(model));
-  const skippedReason = new Map(
-    settings.skipped.map((s) => [s.model, s.reason]),
+
+  const unusableReason = new Map(
+    settings.unusable.map((u) => [u.model, u.reason]),
   );
 
   const columns: Column<Provider>[] = [
@@ -224,7 +225,7 @@ export default function ProvidersSettings() {
           className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900"
         >
           {prefs.map((model, index) => {
-            const reason = skippedReason.get(model);
+            const reason = unusableReason.get(model);
             const effective = model === settings.effectiveModel;
             return (
               <li
@@ -243,8 +244,8 @@ export default function ProvidersSettings() {
                     Will be used
                   </Badge>
                 ) : reason ? (
-                  <Badge variant="muted" title={reason}>
-                    Skipped: {reason}
+                  <Badge variant="muted" title={`Will not be used: ${reason}`}>
+                    {reason === 'disabled' ? 'Disabled' : 'Not installed'}
                   </Badge>
                 ) : null}
                 <div className="flex gap-1">

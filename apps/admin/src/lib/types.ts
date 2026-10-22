@@ -111,8 +111,8 @@ export type AppSettings = {
   modelPreferences: string[];
   /** The preference a run would get right now; null when none is usable. */
   effectiveModel: string | null;
-  /** Preferences passed over, and why. */
-  skipped: { model: string; reason: string }[];
+  /** Every preference that cannot be used, wherever it sits, and why. */
+  unusable: { model: string; reason: string }[];
 };
 
 /** A provider's models as run names: itself, then its pinned variants. */

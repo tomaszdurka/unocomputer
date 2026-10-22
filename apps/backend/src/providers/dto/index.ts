@@ -33,7 +33,7 @@ export class UpdateProviderDto {
   @ApiProperty() @IsBoolean() enabled!: boolean;
 }
 
-export class SkippedModelDto {
+export class UnusableModelDto {
   @ApiProperty({ example: 'claude' }) model!: string;
   @ApiProperty({ example: 'disabled' }) reason!: string;
 }
@@ -58,10 +58,11 @@ export class SettingsDto {
   effectiveModel!: string | null;
 
   @ApiProperty({
-    type: [SkippedModelDto],
-    description: 'Preferences passed over, and why.',
+    type: [UnusableModelDto],
+    description:
+      'Every preference that cannot be used, wherever it sits in the order, and why.',
   })
-  skipped!: SkippedModelDto[];
+  unusable!: UnusableModelDto[];
 }
 
 export class UpdateSettingsDto {

@@ -63,7 +63,7 @@ const codex = provider({
 const initial: AppSettings = {
   modelPreferences: ['devin', 'claude', 'codex'],
   effectiveModel: 'claude',
-  skipped: [{ model: 'devin', reason: 'no "devin" on PATH' }],
+  unusable: [{ model: 'devin', reason: 'no "devin" on PATH' }],
 };
 
 describe('ProvidersSettings', () => {
@@ -92,7 +92,21 @@ describe('ProvidersSettings', () => {
     expect(items).toEqual(['claude', 'claude:sonnet']);
   });
 
-  it('shows the order, which entry will be used, and why others are skipped', async () => {
+  it('marks an unusable entry after the one that will be used, not only before it', async () => {
+    settings.mockResolvedValue({
+      modelPreferences: ['claude', 'devin', 'codex'],
+      effectiveModel: 'claude',
+      unusable: [{ model: 'devin', reason: 'no "devin" on PATH' }],
+    });
+    render(<ProvidersSettings />);
+    const order = await screen.findByRole('list', { name: 'Model preference' });
+    const rows = within(order).getAllByRole('listitem');
+    expect(within(rows[0]).getByText('Will be used')).toBeTruthy();
+    expect(within(rows[1]).getByText('Not installed')).toBeTruthy();
+    expect(within(rows[2]).queryByText(/used|installed|Disabled/)).toBeNull();
+  });
+
+  it('shows the order, which entry will be used, and why others cannot be', async () => {
     render(<ProvidersSettings />);
     const order = await screen.findByRole('list', { name: 'Model preference' });
     const rows = within(order).getAllByRole('listitem');
@@ -163,7 +177,7 @@ describe('ProvidersSettings', () => {
     settings.mockResolvedValueOnce(initial).mockResolvedValueOnce({
       ...initial,
       effectiveModel: 'codex',
-      skipped: [...initial.skipped, { model: 'claude', reason: 'disabled' }],
+      unusable: [...initial.unusable, { model: 'claude', reason: 'disabled' }],
     });
     render(<ProvidersSettings />);
     const toggle = await screen.findByRole('switch', {
@@ -179,7 +193,7 @@ describe('ProvidersSettings', () => {
     const order = screen.getByRole('list', { name: 'Model preference' });
     const rows = within(order).getAllByRole('listitem');
     expect(within(rows[2]).getByText('Will be used')).toBeTruthy();
-    expect(within(rows[1]).getByText(/Skipped: disabled/)).toBeTruthy();
+    expect(within(rows[1]).getByText('Disabled')).toBeTruthy();
   });
 
   it("shows the backend's reason when a change is refused, and keeps the old state", async () => {

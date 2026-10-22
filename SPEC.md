@@ -233,15 +233,16 @@ names none, so any provider can be switched off at any time. Unknown id: 404.
 {
   "modelPreferences": ["claude:sonnet", "codex", "devin", "gemini"],
   "effectiveModel": "claude:sonnet",
-  "skipped": []
+  "unusable": [{ "model": "gemini", "reason": "no \"gemini\" on PATH" }]
 }
 ```
 
 `modelPreferences` is the order a run that names no model tries, each entry
 `"<provider>"` or `"<provider>:<model>"`. `effectiveModel` is the first whose
 provider is enabled and installed - what such a run would get right now - and
-`skipped` lists the ones passed over with why (`disabled`, `no "gemini" on
-PATH`). Unset means registry order; a `defaultModel` stored before the list
+`unusable` lists every entry that cannot be used, wherever it sits in the
+order, with why (`disabled`, `no "gemini" on PATH`) - so a list can show which
+fallbacks would not actually fall back. Unset means registry order; a `defaultModel` stored before the list
 existed reads as its head. Providers not in the stored list are appended in
 registry order, so a newly added provider is reachable without editing it.
 

@@ -65,32 +65,33 @@ export class ProvidersService {
   }
 
   /**
-   * The first preference whose provider is enabled and installed, or null
-   * when none is - with, for each one passed over, why.
+   * The first preference whose provider is enabled and installed - null when
+   * none is - and, for every entry that cannot be used wherever it sits, why.
+   * Each entry is judged, not just the ones before the winner, so a list can
+   * show which fallbacks would not actually fall back.
    */
   async effectiveModel(): Promise<{
     model: string | null;
-    skipped: { model: string; reason: string }[];
+    unusable: { model: string; reason: string }[];
   }> {
-    const skipped: { model: string; reason: string }[] = [];
+    let effective: string | null = null;
+    const unusable: { model: string; reason: string }[] = [];
     for (const model of await this.modelPreferences()) {
-      const { providerId } = parseModel(model);
-      const definition = findProvider(providerId);
-      if (!definition) {
-        skipped.push({ model, reason: 'unknown provider' });
-        continue;
-      }
-      if (!(await this.settings.isProviderEnabled(providerId))) {
-        skipped.push({ model, reason: 'disabled' });
-        continue;
-      }
-      if (which(definition.binary) === null) {
-        skipped.push({ model, reason: `no "${definition.binary}" on PATH` });
-        continue;
-      }
-      return { model, skipped };
+      const reason = await this.whyUnusable(model);
+      if (reason) unusable.push({ model, reason });
+      else effective ??= model;
     }
-    return { model: null, skipped };
+    return { model: effective, unusable };
+  }
+
+  private async whyUnusable(model: string): Promise<string | null> {
+    const { providerId } = parseModel(model);
+    const definition = findProvider(providerId);
+    if (!definition) return 'unknown provider';
+    if (!(await this.settings.isProviderEnabled(providerId))) return 'disabled';
+    if (which(definition.binary) === null)
+      return `no "${definition.binary}" on PATH`;
+    return null;
   }
 
   /**
@@ -106,9 +107,9 @@ export class ProvidersService {
   ): Promise<{ model: string; providerId: string; cliModel?: string }> {
     const named = requested ?? inherited;
     if (named === null || named === undefined) {
-      const { model, skipped } = await this.effectiveModel();
+      const { model, unusable } = await this.effectiveModel();
       if (model === null) {
-        const why = skipped.map((s) => `${s.model} (${s.reason})`).join(', ');
+        const why = unusable.map((s) => `${s.model} (${s.reason})`).join(', ');
         throw new ProviderError(
           `no preferred model is usable: ${why}; enable or install one in settings`,
         );

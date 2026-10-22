@@ -125,7 +125,11 @@ describe('Providers and settings (HTTP)', () => {
         'devin',
       ]);
       expect(res.body.effectiveModel).toBe('claude');
-      expect(res.body.skipped).toEqual([]);
+      // gemini and devin are not installed in this fake PATH.
+      expect(res.body.unusable.map((u: { model: string }) => u.model)).toEqual([
+        'gemini',
+        'devin',
+      ]);
     });
 
     it('stores an order and pads it with the providers not listed', async () => {
@@ -146,13 +150,25 @@ describe('Providers and settings (HTTP)', () => {
       ]);
     });
 
+    it('reports an unusable entry wherever it sits, not only before the winner', async () => {
+      const res = await patch('/api/settings', {
+        modelPreferences: ['claude', 'devin', 'codex', 'gemini'],
+      }).expect(200);
+      expect(res.body.effectiveModel).toBe('claude');
+      expect(res.body.unusable).toEqual([
+        { model: 'devin', reason: 'no "devin" on PATH' },
+        { model: 'gemini', reason: 'no "gemini" on PATH' },
+      ]);
+    });
+
     it('skips a preference whose provider is not installed, and says so', async () => {
       const res = await patch('/api/settings', {
         modelPreferences: ['devin', 'claude'],
       }).expect(200);
       expect(res.body.effectiveModel).toBe('claude');
-      expect(res.body.skipped).toEqual([
+      expect(res.body.unusable).toEqual([
         { model: 'devin', reason: 'no "devin" on PATH' },
+        { model: 'gemini', reason: 'no "gemini" on PATH' },
       ]);
     });
 
@@ -160,8 +176,10 @@ describe('Providers and settings (HTTP)', () => {
       await patch('/api/providers/claude', { enabled: false }).expect(200);
       const res = await get('/api/settings').expect(200);
       expect(res.body.effectiveModel).toBe('codex');
-      expect(res.body.skipped).toEqual([
+      expect(res.body.unusable).toEqual([
         { model: 'claude', reason: 'disabled' },
+        { model: 'gemini', reason: 'no "gemini" on PATH' },
+        { model: 'devin', reason: 'no "devin" on PATH' },
       ]);
     });
 
@@ -170,7 +188,7 @@ describe('Providers and settings (HTTP)', () => {
       await patch('/api/providers/codex', { enabled: false }).expect(200);
       const res = await get('/api/settings').expect(200);
       expect(res.body.effectiveModel).toBeNull();
-      expect(res.body.skipped).toHaveLength(4);
+      expect(res.body.unusable).toHaveLength(4);
     });
 
     it('reads a defaultModel stored before preferences existed as the head of the list', async () => {
