@@ -170,3 +170,23 @@ export function PlayIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function PanelLeftCloseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M9 3v18" />
+      <path d="m16 15-3-3 3-3" />
+    </Icon>
+  );
+}
+
+export function PanelLeftOpenIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M9 3v18" />
+      <path d="m14 9 3 3-3 3" />
+    </Icon>
+  );
+}

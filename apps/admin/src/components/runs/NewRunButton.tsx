@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@app/ui';
+import { Button, useSidebarCollapsed } from '@app/ui';
 import { Play } from 'lucide-react';
 import RunPromptDialog from '#/components/runs/RunPromptDialog';
 import { queueRun } from '#/lib/api';
@@ -10,6 +10,7 @@ import { queueRun } from '#/lib/api';
 // sits under the brand so it stays reachable from every page.
 export default function NewRunButton() {
   const [open, setOpen] = useState(false);
+  const collapsed = useSidebarCollapsed();
 
   const handleNewRun = async ({
     prompt,
@@ -26,9 +27,16 @@ export default function NewRunButton() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="w-full">
+      {/* The collapsed rail leaves 40px: the label goes, the icon and the
+          tooltip stay, so a new run is startable at either width. */}
+      <Button
+        onClick={() => setOpen(true)}
+        className={collapsed ? 'size-10 justify-center p-0' : 'w-full'}
+        aria-label={collapsed ? 'New Run' : undefined}
+        title={collapsed ? 'New Run' : undefined}
+      >
         <Play className="h-4 w-4" />
-        New Run
+        {collapsed ? null : 'New Run'}
       </Button>
 
       <RunPromptDialog

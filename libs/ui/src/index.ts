@@ -19,6 +19,8 @@ export * from './Badge';
 export * from './Card';
 export * from './Field';
 export * from './Separator';
+export * from './sidebar-mode';
+export * from './Monogram';
 export * from './NavItem';
 export * from './Sidebar';
 export * from './SettingsSidebar';
