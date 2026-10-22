@@ -40,6 +40,7 @@ export function AppearanceSettings() {
         <button
           key={option.value}
           type="button"
+          aria-pressed={theme === option.value}
           onClick={() => select(option.value)}
           className={`flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm transition-colors ${
             theme === option.value

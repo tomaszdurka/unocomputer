@@ -23,9 +23,12 @@ const variants: Record<ButtonVariant, string> = {
     'bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600',
 };
 
+// Fixed heights so buttons line up with inputs and toolbar controls: sm is
+// the 32px control height used across toolbars and settings rows, md the
+// 36px primary height for dialogs and forms.
 const sizes: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-9 px-4 text-sm',
   icon: 'size-9 p-0',
 };
 

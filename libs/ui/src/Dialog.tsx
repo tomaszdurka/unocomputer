@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 // Radix gives this a focus trap, aria-modal wiring, Escape-to-close, scroll lock and
@@ -75,4 +76,94 @@ export function DialogContent({
 
 export function DialogFooter({ children }: { children: React.ReactNode }) {
   return <div className="flex justify-end gap-2 pt-2">{children}</div>;
+}
+
+type ConfirmDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: string;
+  /** Confirm button label. Say what happens: "Delete project", not "OK". */
+  confirmLabel: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  /** May throw or reject: the dialog stays open and shows the message. */
+  onConfirm: () => void | Promise<void>;
+};
+
+/**
+ * The standard "are you sure" flow. A rejected `onConfirm` keeps the dialog open with
+ * the error shown, so a failed delete never looks like it worked.
+ */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel = 'Cancel',
+  destructive = false,
+  onConfirm,
+}: ConfirmDialogProps) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onConfirm();
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!busy) {
+          setError(null);
+          onOpenChange(next);
+        }
+      }}
+    >
+      <DialogContent
+        title={title}
+        description={description}
+        className="max-w-md"
+      >
+        {error ? (
+          <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            {error}
+          </p>
+        ) : null}
+        <DialogFooter>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onOpenChange(false)}
+            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={confirm}
+            className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${
+              destructive
+                ? 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'
+                : 'bg-[var(--ui-accent)] text-[var(--ui-accent-fg)] hover:bg-[var(--ui-accent-hover)]'
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
