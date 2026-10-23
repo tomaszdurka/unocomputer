@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, DataTable, type Column } from '@app/ui';
+import { SortableList } from '@app/ui/sortable-list';
 import {
   ApiError,
   listProviders,
@@ -81,12 +82,6 @@ export default function ProvidersSettings() {
   }
 
   const prefs = settings.modelPreferences;
-  const move = (index: number, by: -1 | 1) => {
-    const next = [...prefs];
-    const [item] = next.splice(index, 1);
-    next.splice(index + by, 0, item);
-    void savePreferences(next);
-  };
   const remove = (index: number) => {
     void savePreferences(prefs.filter((_, i) => i !== index));
   };
@@ -222,24 +217,25 @@ export default function ProvidersSettings() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">Model preference</h2>
+          <h2 id="model-preference" className="text-sm font-medium">
+            Model preference
+          </h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400">
             What a run uses when it names no model and its session has none yet:
             the first entry whose provider is enabled and installed.
           </p>
         </div>
-        <ol
-          aria-label="Model preference"
+        <SortableList
+          items={prefs.map((model) => ({ id: model }))}
+          onReorder={(ids) => void savePreferences(ids)}
+          disabled={busy === 'preferences'}
           className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          {prefs.map((model, index) => {
+          itemClassName="py-1"
+          renderItem={({ id: model }, index) => {
             const reason = unusableReason.get(model);
             const effective = model === settings.effectiveModel;
             return (
-              <li
-                key={model}
-                className="flex items-center gap-3 px-4 py-2 text-sm"
-              >
+              <div className="flex items-center gap-3 py-1 pr-3 text-sm">
                 <span
                   className={`w-5 text-right text-xs ${
                     reason
@@ -274,41 +270,23 @@ export default function ProvidersSettings() {
                     {reason === 'disabled' ? 'Disabled' : 'Not installed'}
                   </Badge>
                 ) : null}
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Move ${model} up`}
-                    disabled={index === 0 || busy === 'preferences'}
-                    onClick={() => move(index, -1)}
-                  >
-                    ↑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Move ${model} down`}
-                    disabled={
-                      index === prefs.length - 1 || busy === 'preferences'
-                    }
-                    onClick={() => move(index, 1)}
-                  >
-                    ↓
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Remove ${model}`}
-                    disabled={prefs.length === 1 || busy === 'preferences'}
-                    onClick={() => remove(index)}
-                  >
-                    ✕
-                  </Button>
-                </div>
-              </li>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Remove ${model}`}
+                  disabled={prefs.length === 1 || busy === 'preferences'}
+                  onClick={() => remove(index)}
+                >
+                  ✕
+                </Button>
+              </div>
             );
-          })}
-        </ol>
+          }}
+        />
+        <p className="text-xs text-gray-500 dark:text-neutral-400">
+          Drag the handle to reorder - or focus it and use Space, the arrow
+          keys, then Space.
+        </p>
         {addable.length ? (
           <select
             aria-label="Add to the order"

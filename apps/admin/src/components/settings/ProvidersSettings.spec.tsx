@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -30,6 +31,47 @@ const list = jest.mocked(listProviders);
 const settings = jest.mocked(getSettings);
 const patchProvider = jest.mocked(updateProvider);
 const patchSettings = jest.mocked(updateSettings);
+
+/** The preference rows, in order. */
+const preferenceRows = () =>
+  Array.from(document.querySelectorAll<HTMLElement>('[data-sortable-id]'));
+
+// jsdom lays nothing out; give the rows stacked rectangles so a keyboard move
+// has somewhere to go (libs/ui's sortable-list.spec uses the same trick).
+const ROW = 40;
+const originalRect = HTMLElement.prototype.getBoundingClientRect;
+beforeAll(() => {
+  HTMLElement.prototype.getBoundingClientRect = function () {
+    const row = this.closest('[data-sortable-id]');
+    const rows = preferenceRows();
+    const index = row ? rows.indexOf(row as HTMLElement) : -1;
+    const top = index < 0 ? 0 : index * ROW;
+    const height = row ? ROW : rows.length * ROW;
+    return {
+      x: 0,
+      y: top,
+      top,
+      bottom: top + height,
+      left: 0,
+      right: 200,
+      width: 200,
+      height,
+      toJSON: () => ({}),
+    } as DOMRect;
+  };
+});
+afterAll(() => {
+  HTMLElement.prototype.getBoundingClientRect = originalRect;
+});
+
+async function press(target: HTMLElement, code: string, key: string) {
+  await act(async () => {
+    fireEvent.keyDown(target, { code, key });
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  });
+}
 
 const provider = (over: Partial<Provider>): Provider => ({
   id: 'claude',
@@ -94,6 +136,19 @@ describe('ProvidersSettings', () => {
     expect(items).toEqual(['claude', 'claude:sonnet']);
   });
 
+  it('shows the order, which entry will be used, and why others cannot be', async () => {
+    render(<ProvidersSettings />);
+    await screen.findByText('Claude Code');
+    const rows = preferenceRows();
+    expect(rows.map((r) => r.getAttribute('data-sortable-id'))).toEqual([
+      'devin',
+      'claude',
+      'codex',
+    ]);
+    expect(within(rows[0]).getByText('Not installed')).toBeTruthy();
+    expect(within(rows[1]).getByText('Will be used')).toBeTruthy();
+  });
+
   it('marks an unusable entry after the one that will be used, not only before it', async () => {
     settings.mockResolvedValue({
       modelPreferences: ['claude', 'devin', 'codex'],
@@ -101,22 +156,11 @@ describe('ProvidersSettings', () => {
       unusable: [{ model: 'devin', reason: 'no "devin" on PATH' }],
     });
     render(<ProvidersSettings />);
-    const order = await screen.findByRole('list', { name: 'Model preference' });
-    const rows = within(order).getAllByRole('listitem');
+    await screen.findByText('Claude Code');
+    const rows = preferenceRows();
     expect(within(rows[0]).getByText('Will be used')).toBeTruthy();
     expect(within(rows[1]).getByText('Not installed')).toBeTruthy();
     expect(within(rows[2]).queryByText(/used|installed|Disabled/)).toBeNull();
-  });
-
-  it('shows the order, which entry will be used, and why others cannot be', async () => {
-    render(<ProvidersSettings />);
-    const order = await screen.findByRole('list', { name: 'Model preference' });
-    const rows = within(order).getAllByRole('listitem');
-    expect(
-      rows.map((r) => within(r).getByText(/^(devin|claude|codex)/).textContent),
-    ).toEqual(['devin', 'claude', 'codex']);
-    expect(within(rows[0]).getByText('Not installed')).toBeTruthy();
-    expect(within(rows[1]).getByText('Will be used')).toBeTruthy();
   });
 
   it('strikes through and greys what will not be used, and bolds what will', async () => {
@@ -126,9 +170,13 @@ describe('ProvidersSettings', () => {
       unusable: [{ model: 'devin', reason: 'no "devin" on PATH' }],
     });
     render(<ProvidersSettings />);
-    const order = await screen.findByRole('list', { name: 'Model preference' });
+    await screen.findByText('Claude Code');
     const name = (model: string) =>
-      within(order).getByText(model, { selector: 'span' });
+      within(
+        preferenceRows().find(
+          (r) => r.getAttribute('data-sortable-id') === model,
+        )!,
+      ).getByText(model, { selector: 'span' });
     expect(name('devin').className).toMatch(/line-through/);
     expect(name('devin').className).toMatch(/text-gray-400/);
     expect(name('claude').className).toMatch(/font-semibold/);
@@ -153,8 +201,7 @@ describe('ProvidersSettings', () => {
     });
     render(<ProvidersSettings />);
     expect(await screen.findByText('No model can be used')).toBeTruthy();
-    const order = screen.getByRole('list', { name: 'Model preference' });
-    expect(within(order).queryByText('Will be used')).toBeNull();
+    expect(screen.queryByText('Will be used')).toBeNull();
   });
 
   it('shows no warning while something can be used', async () => {
@@ -163,19 +210,30 @@ describe('ProvidersSettings', () => {
     expect(screen.queryByText('No model can be used')).toBeNull();
   });
 
-  it('moves an entry and saves the new order', async () => {
+  it('reorders by dragging a handle and saves the new order', async () => {
     patchSettings.mockResolvedValue({
       ...initial,
       modelPreferences: ['claude', 'devin', 'codex'],
     });
     render(<ProvidersSettings />);
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Move claude up' }),
-    );
+    await screen.findByText('Claude Code');
+    const [devinHandle] = screen.getAllByRole('button', {
+      name: 'Drag to reorder',
+    });
+    devinHandle.focus();
+    await press(devinHandle, 'Space', ' ');
+    await press(devinHandle, 'ArrowDown', 'ArrowDown');
+    await press(devinHandle, 'Space', ' ');
     await waitFor(() =>
       expect(patchSettings).toHaveBeenCalledWith({
         modelPreferences: ['claude', 'devin', 'codex'],
       }),
+    );
+    // The rows follow the saved order, not the drop.
+    await waitFor(() =>
+      expect(
+        preferenceRows().map((r) => r.getAttribute('data-sortable-id')),
+      ).toEqual(['claude', 'devin', 'codex']),
     );
   });
 
@@ -234,8 +292,7 @@ describe('ProvidersSettings', () => {
     await waitFor(() =>
       expect(toggle.getAttribute('aria-checked')).toBe('false'),
     );
-    const order = screen.getByRole('list', { name: 'Model preference' });
-    const rows = within(order).getAllByRole('listitem');
+    const rows = preferenceRows();
     expect(within(rows[2]).getByText('Will be used')).toBeTruthy();
     expect(within(rows[1]).getByText('Disabled')).toBeTruthy();
   });
@@ -246,13 +303,10 @@ describe('ProvidersSettings', () => {
     );
     render(<ProvidersSettings />);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Move claude up' }),
+      await screen.findByRole('button', { name: 'Remove devin' }),
     );
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toMatch(/unknown provider/);
-    const order = screen.getByRole('list', { name: 'Model preference' });
-    expect(within(order).getAllByRole('listitem')[0].textContent).toMatch(
-      /devin/,
-    );
+    expect(preferenceRows()[0].getAttribute('data-sortable-id')).toBe('devin');
   });
 });

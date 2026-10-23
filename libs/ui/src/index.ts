@@ -17,6 +17,7 @@
 //   import { Accordion, AccordionItem } from '@app/ui/accordion';
 //   import { ToggleGroup, ToggleGroupItem } from '@app/ui/toggle-group';
 //   import { Combobox } from '@app/ui/combobox';
+//   import { SortableList } from '@app/ui/sortable-list';
 //
 // Markdown (react-markdown, client-side) and the Toast provider (client context) are
 // kept off the barrel for the same reason:
