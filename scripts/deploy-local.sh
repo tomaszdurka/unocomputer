@@ -86,7 +86,18 @@ resolve_admin_port() {
 }
 resolve_admin_port
 
-bootout() { launchctl bootout "$GUI/$1" 2>/dev/null || true; }
+# bootout returns before launchd has finished tearing the service down, and a
+# bootstrap of the same label in that window fails with "Bootstrap failed: 5:
+# Input/output error" - leaving the plists written and nothing running. Wait
+# until the label is really gone before going on.
+bootout() {
+  launchctl bootout "$GUI/$1" 2>/dev/null || true
+  for _ in $(seq 1 50); do
+    launchctl print "$GUI/$1" >/dev/null 2>&1 || return 0
+    sleep 0.2
+  done
+  echo "WARNING: $1 is still loaded after bootout; bootstrap may fail."
+}
 
 write_plist() { # label, workdir, logfile, program args (rest);
                 # env via WRITE_PLIST_ENV, one KEY=VALUE per line (values may contain spaces)
